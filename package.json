@@ -1,0 +1,11 @@
+{
+  "name": "linkhq9-github-pages",
+  "version": "1.0.0",
+  "description": "My GitHub Pages website",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo \"No build step needed\"",
+    "deploy": "echo \"Use GitHub Pages settings or gh-pages if needed\""
+  },
+  "private": true
+}
