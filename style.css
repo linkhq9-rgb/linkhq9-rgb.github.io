@@ -1,3 +1,8 @@
+@font-face{
+    font-family:'8BitOperator';
+    src:url('./8bitoperator_jve.ttf') format('truetype');
+}
+
 body{
 margin:0;
 font-family:'8BitOperator', monospace;
@@ -5,10 +10,7 @@ background:black;
 color:#a000ff;
 min-height:100vh;
 }
-@font-face{
-    font-family: '8BitOperator';
-    src: url('8bitoperator_jve.ttf') format('truetype');
-}
+
 .background{
 position:fixed;
 top:0;
@@ -49,6 +51,7 @@ padding:15px;
 border:2px solid #a000ff;
 background:rgba(50,0,80,.7);
 transition:.3s;
+font-family:'8BitOperator', monospace;
 }
 
 .game-btn:hover{
