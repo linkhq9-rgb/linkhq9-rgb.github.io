@@ -1,0 +1,1 @@
+// Add game links by replacing # in index.html
