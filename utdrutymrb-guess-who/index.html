@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" scene="width=device-width, initial-scale=1.0">
+  <link href="img/icon.png" type="image/png" rel="icon">
+  <title>UTDR Guess Who Unlimited</title>
+
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./scripts.js"></script>
+</head>
+
+<!-- Templates for DOM elements that will be dynamically loaded -->
+<template id="charset-option-template">
+  <option class="charset-option" value=""></option>
+</template>
+
+<template id="character-card-template">
+  <div class="character-card active unmarked">
+    <div class="character-name-popup">
+      <p class="no-bottom-margin character-name"></p>
+    </div>
+    <div tabindex="2" class="character-img-frame img-frame">
+      <div class="bg"></div>
+      <div class="character-question-marker center-container">
+        <div class="character-question-icon">?</div>
+      </div>
+      <img class="character-img" draggable="false">
+    </div>
+    <div class="inspect-img-frame">
+      <div class="bg"></div>
+      <img class="inspect-img" draggable="false">
+    </div>
+  </div>
+</template>
+
+<!-- Main page content -->
+
+<body>
+  <div class="max-width-box">
+
+    <!-- Name entry scene -->
+    <div id="name-scene" class="scene hidden">
+      <div class="empty-item"></div>
+      <label for="name-input" id="name-input-label">
+        <h2>Please enter your name!</h2>
+        <p>It will be displayed in-game</p>
+      </label>
+      <div class="center-container">
+        <input type="text" id="name-input" autocomplete="off">
+        <br>
+        <label for="remember-name">
+          <input type="checkbox" name="" id="remember-name">
+          <span>REMEMBER ME</span>
+        </label>
+      </div>
+      <button type="button" id="name-submit">Continue</button>
+    </div>
+
+    <!-- Main menu scene -->
+    <div id="menu-scene" class="scene hidden">
+      <div id="menu-top-left">
+        <img src="img/logo-no-bg.png" alt="UTDR Guess Who Unlimited Logo" id="menu-logo" class="small-bottom-margin">
+        <p id="menu-version-line" class="med-left-margin">v1.0 - <a target="_blank"
+            href="https://github.com/wearsnomask/utdr-guess-who/blob/main/CHANGELOG.md#v10">What's new?</a></p>
+        <p id="menu-name-display" class="med-left-margin">
+          <span class="grey-text">Chosen name: </span>
+          <span id="menu-name"></span>
+        </p>
+      </div>
+      <div id="menu-options">
+        <ul id="menu-options-config" class="no-marker">
+          <li>
+            <label for="charset-select" tabindex="2" id="charset-label">CHARACTER SET: </label>
+            <select name="charset" id="charset-select" tabindex="-1">
+              <!-- Filled dynamically based on detected sets -->
+            </select>
+          </li>
+          <li id="menu-spoiler-warning">
+            <span class="red-text">WARNING:</span> Expect spoilers in all character sets for their respective games!
+          </li>
+          <li>
+            <a target="_blank" href="https://github.com/wearsnomask/utdr-guess-who#adding-character-sets"
+              id="menu-add-charset-link">Add your own set of characters to play with!</a>
+          </li>
+        </ul>
+        <ul id="menu-options-main" class="no-marker">
+          <li>
+            <a href="javascript:void(0)" tabindex="1" id="menu-start" class="hidden">START GAME</a> <span
+              class="game-loading-message">Loading... </span><span
+              class="game-loading-message game-loading-percent hidden">0%</span>
+          </li>
+          <li><a href="javascript:void(0)" tabindex="1" id="menu-edit-name">EDIT NAME</a></li>
+          <li><a href="javascript:void(0)" tabindex="1" id="menu-instructions">INSTRUCTIONS</a></li>
+          <li><a href="javascript:void(0)" tabindex="1" id="menu-credits">CREDITS</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Game scene -->
+    <div id="game-scene" class="scene hidden">
+
+      <img id="game-lookup-cursor" src="img/sCursorSelect.png" alt="" inert>
+
+      <dialog id="game-notes-dialog" closedby="any">
+        <textarea id="game-notes">My questions asked:
+
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+* 
+  Yes/No
+        </textarea>
+        <button id="game-notes-close" class="no-bottom-margin">Hide</button>
+      </dialog>
+
+      <div id="game-info-panel">
+
+        <div id="game-top-buttons">
+          <button tabindex="1" id="game-quit" class="small no-margin"
+            title="Return to the main menu. Game progress will be lost">Quit to menu</button>
+          <button tabindex="1" id="game-restart" class="small no-margin"
+            title="Reset your character, your guesses, and the flipped state of all character cards. Notes will be retained">Restart</button>
+          <button tabindex="1" class="game-lookup small-screen-only small no-margin"
+            title="Trigger this button, then select a character to look them up online for info about them">Look up
+            Character</button>
+          <button tabindex="1" class="game-notes small-screen-only small no-margin"
+            title="Open a box to write notes, e.g. answers to questions you've asked">Notes</button>
+          <button tabindex="1" class="game-controls small-screen-only small no-margin"
+            title="Show available keyboard, mobile, and mouse controls">Controls</button>
+          <button tabindex="1" class="game-instructions small-screen-only small no-margin"
+            title="Show instructions on how to play the game">Instructions</button>
+        </div>
+
+        <p id="small-screen-name-display" class="small-screen-only"><span class="player-name"></span>'s POV</p>
+
+        <div id="your-char-display" class="center-container">
+
+          <p class="center-text">YOU ARE:</p>
+          <p id="your-char-name"></p>
+          <div id="your-char-img-frame" class="img-frame">
+            <div class="bg"></div>
+            <img id="your-char-img" draggable="false">
+          </div>
+
+          <div id="guesses-display" class="center-container">
+            <p class="no-bottom-margin med-top-margin">Guesses:</p>
+            <div id="guesses-line" draggable="false">
+              <div tabindex="1" class="guess-icon active">
+                <img src="img/sHeart_0.png" alt="Guess available" class="active-icon" draggable="false">
+                <img src="img/sHeart_1.png" alt="Guess unavailable" class="inactive-icon" draggable="false">
+              </div>
+              <div tabindex="1" class="guess-icon active">
+                <img src="img/sHeart_0.png" alt="Guess available" class="active-icon" draggable="false">
+                <img src="img/sHeart_1.png" alt="Guess unavailable" class="inactive-icon" draggable="false">
+              </div>
+              <div tabindex="1" class="guess-icon active">
+                <img src="img/sHeart_0.png" alt="Guess available" class="active-icon" draggable="false">
+                <img src="img/sHeart_1.png" alt="Guess unavailable" class="inactive-icon" draggable="false">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="empty-item"></div>
+
+      </div>
+
+      <div id="game-cards-panel">
+
+        <div id="cards-top-line" class="big-screen-only smallmed-bottom-margin">
+          <p class="big-screen-only no-bottom-margin"><span class="player-name"></span>'s POV</p>
+          <div>
+            <button tabindex="3" class="game-lookup small no-margin"
+              title="Trigger this button, then select a character to look them up online for info about them">Look up
+              Character</button>
+            <button tabindex="3" class="game-notes small no-margin"
+              title="Open a box to write notes, e.g. answers to questions you've asked">Notes</button>
+          </div>
+        </div>
+
+        <div>
+          <p class="cards-left-display">Possibilities left: <span class="cards-left-count"></span></p>
+          <div id="card-grid"></div>
+        </div>
+
+        <div id="card-panel-buttons" class="big-screen-only">
+          <button tabindex="3" class="game-controls small no-margin"
+            title="Show available keyboard, mobile, and mouse controls">Controls</button>
+          <button tabindex="3" class="game-instructions small no-margin"
+            title="Show instructions on how to play the game">Instructions</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Instructions scene -->
+    <div id="instructions-scene" class="scene hidden">
+      <div class="center-container">
+        <h3>INSTRUCTIONS</h3>
+      </div>
+      <p>
+        If you don't know how Guess Who works, you will need 2 people in order to play. Ask a friend (or enemy) to get
+        the game on their device, and play through a Discord call or something. Each player needs their own game on
+        their own screen.
+      </p>
+      <p>
+        Once you're set, take turns asking "yes" or "no" questions to try and figure out who your opponent's character
+        is! Whoever guess correct first wins.
+      </p>
+      <div class="center-container">
+        <p class="no-bottom-margin">Here are some <span class="yellow-text">RULES</span> to spice up the game!</p>
+        <p class="no-bottom-margin">(You can adjust to your liking)</p>
+      </div>
+      <ol>
+        <li>No repeated questions! Once a question is asked, it can't be asked again by either player!</li>
+        <li>
+          No questions about the card's placement on the board! (Example: "Is your character's card on the top row?")
+        </li>
+        <li>
+          Each player gets 3 guesses. If they run out of guesses, they lose! Guessing also takes a turn, so you can't
+          ask a question and then guess right away. Gotta wait your turn.
+        </li>
+        <li class="grey-text">
+          As an optional house rule, you can make it so the loser is allowed one final guess after losing, so if they
+          manage to guess correctly, the round can end on a tie!
+        </li>
+      </ol>
+      <p>
+        As a fun <span class="red-text">HARD MODE</span> alternative, try having a game where you're only allowed to
+        ask subjective questions, without the "yes" or "no" limit. (Example: "What's your character's favorite
+        Pokemon?")
+      </p>
+      <button id="instructions-back" class="scene-back no-bottom-margin">Back</button>
+    </div>
+
+
+    <!-- Controls scene -->
+    <div id="controls-scene" class="scene hidden">
+      <div class="center-container">
+        <h3>CONTROLS</h3>
+      </div>
+      <div id="controls-grid">
+        <div class="left-column">Mouse move, arrow keys, WASD keys:</div>
+        <div class="right-column">Select button, guess marker, or character card</div>
+
+        <div class="left-column">Left-click, tap, Space, Z key, Enter:</div>
+        <div class="right-column">Interact with selected item (flip guess or card, activate button)</div>
+
+        <div class="left-column">Right-click, double-click, hold tap, X key:</div>
+        <div class="right-column">Mark selected card (what this means is up to you)</div>
+
+        <div class="left-column">Middle-click, I key:</div>
+        <div class="right-column">Inspect selected card (use pinch to zoom on mobile instead)</div>
+
+        <div class="left-column">Mouse wheel, -/+ keys:</div>
+        <div class="right-column">Adjust scale of inspected card</div>
+
+        <div class="left-column">C key:</div>
+        <div class="right-column">Toggle all cards between active/inactive</div>
+
+        <div class="left-column">L key:</div>
+        <div class="right-column">Look up character on wiki (use "Look up character" button on mouse/mobile instead)
+        </div>
+
+        <div class="left-column">Esc key:</div>
+        <div class="right-column">Open/close notes (use "Notes" button on mouse/mobile instead)</div>
+      </div>
+
+      <button id="controls-back" class="scene-back no-bottom-margin">Back</button>
+    </div>
+
+    <!-- Credits scene -->
+    <div id="credits-scene" class="scene hidden">
+      <div class="center-container">
+        <h3>CREDITS</h3>
+      </div>
+
+      <div class="credits-item">
+        <img src="img/annoying-dog-icon.png" alt="Toby Fox icon">
+        <div>
+          <h4>Toby Fox, Temmie Chang, and team</h4>
+          Original Undertale and Deltarune games and character designs
+          <ul>
+            <li><a target="_blank" href="https://undertale.com">Undertale.com</a></li>
+            <li><a target="_blank" href="https://deltarune.com">Deltarune.com</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="credits-item">
+        <img src="img/seek-icon.jpg" alt="Seek icon">
+        <div>
+          <h4>Seek's stuff</h4>
+          Original concept and design for Deltarune Guess Who game
+          <ul>
+            <li><a target="_blank" href="https://seeksstuff.itch.io/deltarune-guess-who">Seek's Cool Deltarune Guess Who
+                Game</a></li>
+            <li><a target="_blank" href="https://www.youtube.com/@Seeks_stuff">Youtube</a></li>
+            <li><a target="_blank" href="https://x.com/seeks_stuff">@Seeks_stuff</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="credits-item">
+        <img src="img/charlotte-icon.jpg" alt="Charlotte Wears No Mask icon">
+        <div>
+          <h4>Charlotte Wears No Mask</h4>
+          Wrote this version of the Guess Who game
+          <ul>
+            <li><a target="_blank" href="https://x.com/LadyWearsNoMask">@LadyWearsNoMask</a></li>
+            <li><a target="_blank"
+                href="https://bsky.app/profile/ladywearsnomask.bsky.social">@LadyWearsNoMask.bsky.social</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="credits-item">
+        <p>
+          See more credits in README at <a target="_blank"
+            href="https://github.com/wearsnomask/utdr-guess-who">https://github.com/wearsnomask/utdr-guess-who</a>
+        </p>
+      </div>
+
+      <button id="credits-back" class="scene-back no-bottom-margin">Back</button>
+    </div>
+
+  </div>
+</body>
+
+</html>
