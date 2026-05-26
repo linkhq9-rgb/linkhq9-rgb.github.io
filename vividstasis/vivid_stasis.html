@@ -1,0 +1,2900 @@
+<!DOCTYPE html>
+<!-- saved from url=(0027)https://vivid.shortpie.dev/ -->
+<html lang="en-us"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <title>vivid/stasis</title>
+    <link rel="icon" href="https://cdn.prod.website-files.com/684a13897bde363d4679eea1/684a75b441311e7d943fa0b9_webclip.png">
+    <link rel="apple-touch-icon" href="https://cdn.prod.website-files.com/684a13897bde363d4679eea1/684a75b441311e7d943fa0b9_webclip.png">
+    <link rel="stylesheet" href="./vivid_stasis_files/loader.css">
+    <style>
+      @-webkit-keyframes rotation {
+        from {
+          -webkit-transform: rotate(0deg);
+        }
+
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @-moz-keyframes rotation {
+        from {
+          -moz-transform: rotate(0deg);
+        }
+
+        to {
+          -moz-transform: rotate(360deg);
+        }
+      }
+
+      @-o-keyframes rotation {
+        from {
+          -o-transform: rotate(0deg);
+        }
+
+        to {
+          -o-transform: rotate(360deg);
+        }
+      }
+
+      @keyframes rotation {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      html {
+        background: #060612;
+      }
+
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        min-height: fill-available;
+        min-height: 100svh; /* Otherwise contents can be covered by an address bar in Safari on iOS 15 */
+        min-width: 100vw;
+        background: radial-gradient(
+          56.63% 56.63% at 50% 43.37%,
+          #1c1726 0%,
+          #060612 100%
+        );
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        place-items: center;
+      }
+
+      body.scrollingDisabled {
+        overflow: hidden;
+      }
+
+      .emscripten {
+        padding-right: 0;
+        display: block;
+      }
+
+      div.emscripten {
+        text-align: center;
+      }
+
+      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+      canvas.emscripten {
+        display: none;
+        border: 0px none;
+        background-color: black;
+        position: relative;
+        transition: opacity 5s ease-in;
+        -webkit-transition: opacity 5s ease-in;
+        opacity: 0;
+        filter: blur(0) grayscale(0);
+        margin-top: auto;
+        margin-bottom: auto;
+        image-rendering: optimizeSpeed;             /* Older versions of FF          */
+        image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+        image-rendering: -webkit-optimize-contrast; /* Safari                        */
+        image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+        image-rendering: pixelated;                 /* Awesome future-browsers       */
+        -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+      }
+
+      canvas.active {
+        animation-name: fadeIn;
+        animation-duration: 2s;
+        opacity: 1;
+      }
+
+      canvas.paused {
+        animation-name: blur;
+        animation-duration: 0.5s;
+        filter: blur(2px) grayscale(1);
+      }
+
+      canvas.unpaused {
+        animation-name: none;
+      }
+
+      canvas.animatedSizeTransitions {
+        transition: width 0.3s ease, height 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes blur {
+        0% {
+          filter: blur(0) grayscale(0);
+        }
+
+        100% {
+          filter: blur(2px) grayscale(1);
+        }
+      }
+
+      .spinner {
+        height: 30px;
+        width: 30px;
+
+        -webkit-animation: rotation 0.8s linear infinite;
+        -moz-animation: rotation 0.8s linear infinite;
+        -o-animation: rotation 0.8s linear infinite;
+        animation: rotation 0.8s linear infinite;
+
+        border: 5px solid #bdff00;
+        border-top: 5px solid #719900;
+        border-radius: 100%;
+      }
+
+      .floating-control {
+        position: absolute;
+        display: none;
+        border: none;
+
+        left: 0px;
+        top: 0px;
+        width: 400px;
+        height: 100%;
+        padding: 10px;
+
+        font-family: monospace;
+        font-size: 8;
+        color: white;
+        background: rgba(53, 18, 84, 0.8);
+        box-shadow: rgb(9 8 13 / 20%) -2px 2px 4px, rgb(9 8 13 / 40%) -4px 4px 16px;
+      }
+
+      #status {
+        display: inline-block;
+        vertical-align: top;
+        font-weight: bold;
+        color: white;
+      }
+
+      #progress {
+        width: 250px;
+        height: 10px;
+        -webkit-appearance: none;
+        appearance: none;
+        padding: 5px;
+      }
+
+      /* Determines the style of the background of the progress bar */
+      progress[value]::-webkit-progress-bar {
+        background-color: #8492a6;
+        height: 10px;
+        border-radius: 15px;
+      }
+      /* Determines the style of the completed part of the progress bar */
+      progress[value]::-webkit-progress-value {
+        background-image: -webkit-linear-gradient(left, #719900, #bdff00);
+        height: 10px;
+        border-radius: 15px;
+      }
+
+      div.loading {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
+      }
+      div.loading > * {
+        padding: 10px;
+        margin: 10px;
+      }
+
+      .output-container {
+        text-align: center;
+        margin-top: auto;
+      }
+      .output-button {
+        border: none;
+        width: 200px;
+        height: 25px;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: black;
+        color: #20c20e;
+        font-family: "Lucida Console", Monaco, monospace;
+      }
+
+      #output {
+        display: none;
+        height: 200px;
+        background-color: black;
+        color: white;
+        font-family: "Lucida Console", Monaco, monospace;
+        outline: none;
+        border: none;
+        padding: 0;
+        width: 100%;
+      }
+
+      #message-container {
+        display: none;
+        min-height: 50px;
+        background-color: rgba(20, 20, 20, 0.5);
+        outline: none;
+        border: none;
+        padding: 0;
+        width: 100%;
+        position: absolute;
+        top: 0;
+      }
+
+      #messages {
+        margin-left: 50px;
+        color: white;
+        font-family: "Lucida Console", Monaco, monospace;
+        outline: none;
+        border: none;
+        padding: 0;
+      }
+
+      img.qrCode {
+         opacity: 1.0;
+         width: 50%;
+         height: 50%;
+      }
+
+      #pauseMenuContainer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #pauseMenuContainer[hidden] {
+        display: none !important;
+        opacity: 0;
+      }
+
+      #pauseMenuBorder {
+        background: linear-gradient(135deg, #FA1E4E, transparent 40%);
+        padding: 1px;
+        border-radius: 4px;
+        clip-path: polygon(10.5px 0, 100% 0, 100% 100%, 0 100%, 0 10.5px);
+        width: 70vw;
+        max-width: 400px;
+      }
+
+      #pauseMenu {
+        display: flex;
+        flex-direction: column;
+        padding: 60px 30px 60px 30px;
+        background: linear-gradient(180deg, #2E273F 16.15%, rgba(46, 39, 63, 0.79) 56.25%, #2E273F 91.15%);
+        border-radius: 4px;
+        clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        animation-name: fadeIn;
+        animation-duration: 0.5s;
+        opacity: 1;
+      }
+
+      #pauseMenu button {
+        font-weight: 500;
+        font-size: 17px;
+        color: white;
+        background: #FA1E4E;
+        border: 1px solid #FA1E4E;
+        border-radius: 6px;
+        padding: 12px 24px;
+        margin: 5px 0;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #pauseMenu button#quitButton {
+        background: #FA1E4E40;
+      }
+
+      #pauseMenu button:hover {
+        filter: brightness(1.15);
+      }
+
+      #pauseMenu button:active {
+        filter: brightness(0.85);
+      }
+
+      #pauseMenu button[hidden] {
+        display: none;
+      }
+
+      .graph .labels.x-labels {
+        background-color: white;
+        text-anchor: middle;
+      }
+
+      .graph .labels.y-labels {
+        text-anchor: end;
+      }
+
+      .graph {
+        font-family: Averta, -apple-system, "Segoe UI", system-ui, sans-serif;
+        font-feature-settings: "tnum", "lnum";
+        font-style: normal;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 21px;
+        text-decoration-line: none;
+        letter-spacing: 0.25px;
+        background-color: transparent;
+        fill: #ccc;
+      }
+
+      .graph .grid {
+        stroke: #ccc;
+        stroke-dasharray: 0;
+        stroke-width: 1;
+      }
+
+      .labels {
+        font-size: 4px;
+      }
+
+      .label-title {
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 4px;
+      }
+
+      .peer0 {
+        fill: #fa1f4e;
+        stroke: #fa1f4e;
+      }
+      .peer1 {
+        fill: #a970ff;
+        stroke: #a970ff;
+      }
+      .peer2 {
+        fill: #4574ee;
+        stroke: #4574ee;
+      }
+      .peer3 {
+        fill: #c3ff6f;
+        stroke: #c3ff6f;
+      }
+
+      .peer {
+        stroke-width: 0;
+      }
+
+      .peer-frame-delay {
+        fill: none;
+        stroke-width: 1;
+      }
+
+      .acceptable-rollback-button {
+        border: none;
+        width: 50px;
+        height: 25px;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        background-color: black;
+        color: #20c20e;
+        font-family: "Lucida Console", Monaco, monospace;
+      }
+
+      .peer-acceptable-rollback {
+        fill: none;
+        stroke-width: 1;
+        opacity: 0.3;
+      }
+
+      .relay-rtt {
+        stroke-width: 2;
+      }
+    </style>
+  <meta http-equiv="origin-trial" content="AlK2UR5SkAlj8jjdEc9p3F3xuFYlF6LYjAML3EOqw1g26eCwWPjdmecULvBH5MVPoqKYrOfPhYVL71xAXI1IBQoAAAB8eyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3NTgwNjcxOTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><meta http-equiv="origin-trial" content="Amm8/NmvvQfhwCib6I7ZsmUxiSCfOxWxHayJwyU1r3gRIItzr7bNQid6O8ZYaE1GSQTa69WwhPC9flq/oYkRBwsAAACCeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiV2ViVmlld1hSZXF1ZXN0ZWRXaXRoRGVwcmVjYXRpb24iLCJleHBpcnkiOjE3NTgwNjcxOTksImlzU3ViZG9tYWluIjp0cnVlfQ=="><meta http-equiv="origin-trial" content="A9nrunKdU5m96PSN1XsSGr3qOP0lvPFUB2AiAylCDlN5DTl17uDFkpQuHj1AFtgWLxpLaiBZuhrtb2WOu7ofHwEAAACKeyJvcmlnaW4iOiJodHRwczovL2RvdWJsZWNsaWNrLm5ldDo0NDMiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElNdWx0aW1vZGFsSW5wdXQiLCJleHBpcnkiOjE3NzQzMTA0MDAsImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"><meta http-equiv="origin-trial" content="A93bovR+QVXNx2/38qDbmeYYf1wdte9EO37K9eMq3r+541qo0byhYU899BhPB7Cv9QqD7wIbR1B6OAc9kEfYCA4AAACQeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXN5bmRpY2F0aW9uLmNvbTo0NDMiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElNdWx0aW1vZGFsSW5wdXQiLCJleHBpcnkiOjE3NzQzMTA0MDAsImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"><meta http-equiv="origin-trial" content="A1S5fojrAunSDrFbD8OfGmFHdRFZymSM/1ss3G+NEttCLfHkXvlcF6LGLH8Mo5PakLO1sCASXU1/gQf6XGuTBgwAAACQeyJvcmlnaW4iOiJodHRwczovL2dvb2dsZXRhZ3NlcnZpY2VzLmNvbTo0NDMiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElNdWx0aW1vZGFsSW5wdXQiLCJleHBpcnkiOjE3NzQzMTA0MDAsImlzU3ViZG9tYWluIjp0cnVlLCJpc1RoaXJkUGFydHkiOnRydWV9"></head>
+
+  <body>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1">
+    </canvas>
+    <div id="loadah" aria-live="polite">
+      <div id="loadah-stage" style="--loadah-ui-width: 1019px; --loadah-ui-gap: 15px; --loadah-ui-padding-x: 12px; --loadah-timer-size: 24px; --loadah-status-size: 28px; --loadah-progress-height: 34px;">
+        <div id="loadah-controls">
+          <button id="loadah-console" type="button">Console</button>
+          <button id="loadah-skip" type="button">Skip preload?</button>
+        </div>
+        <div id="loadah-ui">
+          <div id="loadah-timer">ETA: 26:13 / 1.1 MB/s</div>
+          <div id="progressbar-container" role="progressbar" aria-label="Loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="2">
+            <div id="progressbar" style="width: 1.8%;"></div>
+          </div>
+          <div id="loadahstatus">Preloading assets...! (24/657)</div>
+        </div>
+      </div>
+    </div>
+    <div id="pauseMenuContainer" hidden="">
+      <div id="pauseMenuBorder">
+        <div id="pauseMenu">
+          <button id="resumeButton" onclick="resume()">
+            Resume
+          </button>
+          <button id="quitButton" onclick="quitIfSupported()">
+            Quit
+          </button>
+        </div>
+        </div>
+    </div>
+    <div class="loading">
+      <div class="spinner" id="spinner"></div>
+      <div class="emscripten" id="status">Downloading...</div>
+
+      <progress value="0" max="1" id="progress" hidden=""></progress>
+      <img id="QRCode" class="qrCode" src="./vivid_stasis_files/runner.svg" alt="URL QR Code" hidden="1">
+      <img id="QR2Code" class="qrCode" src="./vivid_stasis_files/runnerLocal.svg" alt="URL QR2 Code" hidden="1">
+    </div>
+
+    <div class="floating-control" id="multiplayer-stats-container">
+      <div class="multiplayer-stats-network" id="multiplayer-stats-network">
+        <svg version="1.2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="graph" aria-labelledby="title" role="img" viewBox="-20 -10 130 140">
+          <title id="title">Network stats</title>
+          <g class="grid x-grid" id="xGrid">
+            <line x1="0" y1="100" x2="100" y2="100"></line>
+
+            <line x1="12.25" y1="99" x2="12.25" y2="101"></line>
+            <line x1="25" y1="98" x2="25" y2="102"></line>
+            <line x1="37.5" y1="99" x2="37.5" y2="101"></line>
+            <line x1="50" y1="98" x2="50" y2="102"></line>
+            <line x1="62.5" y1="99" x2="62.5" y2="101"></line>
+            <line x1="75" y1="98" x2="75" y2="102"></line>
+            <line x1="87.5" y1="99" x2="87.5" y2="101"></line>
+            <line x1="100" y1="98" x2="100" y2="102"></line>
+          </g>
+          <g class="grid y-grid" id="yGrid">
+            <line x1="0" y1="0" x2="0" y2="100"></line>
+
+            <line x1="-2" y1="0" x2="2" y2="0"></line>
+            <line x1="-1" y1="12.5" x2="1" y2="12.50"></line>
+            <line x1="-2" y1="25" x2="2" y2="25"></line>
+            <line x1="-1" y1="37.5" x2="1" y2="37.5"></line>
+            <line x1="-2" y1="50" x2="2" y2="50"></line>
+            <line x1="-1" y1="62.5" x2="1" y2="62.5"></line>
+            <line x1="-2" y1="75" x2="2" y2="75"></line>
+            <line x1="-1" y1="87.5" x2="1" y2="87.5"></line>
+          </g>
+          <g class="labels x-labels">
+            <text x="0" y="110">-8</text>
+            <text x="25" y="110">-4</text>
+            <text x="50" y="110">0</text>
+            <text x="75" y="110">4</text>
+            <text x="100" y="110">8</text>
+            <text x="50" y="115" class="label-title">Time shift</text>
+          </g>
+          <g class="labels y-labels">
+            <text x="-4" y="0" alignment-baseline="middle">16</text>
+            <text x="-4" y="25" alignment-baseline="middle">12</text>
+            <text x="-4" y="50" alignment-baseline="middle">8</text>
+            <text x="-4" y="75" alignment-baseline="middle">4</text>
+            <text x="-4" y="100" alignment-baseline="middle">0</text>
+            <text x="-10" y="50" class="label-title" alignment-baseline="middle">RTT</text>
+          </g>
+
+          <g id="stats-network-peers">
+          </g>
+
+          <g id="stats-network-peer-frame-delays">
+          </g>
+
+          <g id="stats-network-relay-rtt">
+          </g>
+        </svg>
+      </div>
+      <div>
+        <b>Acceptable rollback frames marker:</b>
+        <div>
+          <button class="acceptable-rollback-button" onclick="set_acceptable_rollback(0)">Off</button>
+          <button class="acceptable-rollback-button" onclick="set_acceptable_rollback(1)">+1</button>
+          <button class="acceptable-rollback-button" onclick="set_acceptable_rollback(2)">+2</button>
+          <button class="acceptable-rollback-button" onclick="set_acceptable_rollback(4)">+4</button>
+        </div>
+      </div>
+      <div id="multiplayer-stats">
+        [no stats available]
+      </div>
+    </div>
+    <div class="output-container" id="output-container" hidden="">
+      <textarea id="output" rows="8"></textarea>
+    </div>
+
+    <div class="wallpaper-container" id="wallpaper-container" style="display: none">
+      <button class="output-button" onclick="toggleElement(&#39;wallpaper-config-iframe&#39;)">
+        Toggle configurator
+      </button>
+    </div>
+    <!-- The wallpaper config is displayed in an iframe to make it possible to use keyboard for entering values (it's consumed by
+        the runner in the original document). -->
+    <iframe class="floating-control" id="wallpaper-config-iframe" src="./vivid_stasis_files/saved_resource.html"></iframe>
+
+    <div id="message-container">
+      <div id="messages">
+      </div>
+    </div>
+
+   <script src="./vivid_stasis_files/f.txt"></script><script src="./vivid_stasis_files/f(1).txt"></script><script async="" data-ad-client="ca-pub-123" data-ad-frequency-hint="30s" data-adbreak-test="on" src="./vivid_stasis_files/f(2).txt" data-checked-head="true">
+   </script>
+
+   <script>
+     window.adsbygoogle = window.adsbygoogle || [];
+     const adBreak =  adConfig = function(o) {adsbygoogle.push(o);}
+   </script>
+
+    <script id="tick-worker" type="javascript/worker">
+      let running = false;
+      let stop_called = false;
+
+      let intervalMs = 16;
+
+      onmessage = (e) => {
+        if (e.data.run) {
+          intervalMs = Math.floor(1000 / e.data.fps);
+
+          if (!running) {
+            running = true;
+            setTimeout(tick, intervalMs);
+          }
+        } else {
+          stop_called = true;
+        }
+      }
+
+      const tick = () => {
+        if (stop_called) {
+          stop_called = false;
+          running = false;
+
+          return;
+        }
+
+        const start = new Date().getTime();
+        postMessage('');
+        const end = new Date().getTime();
+
+        let next_update = start + intervalMs - end;
+        next_update = Math.max(next_update, 0);
+        setTimeout(tick, next_update);
+      }
+    </script>
+
+    <script type="text/javascript">
+      const blob = new Blob([document.querySelector('#tick-worker').textContent]);
+      const worker = new Worker(window.URL.createObjectURL(blob));
+
+      worker.onmessage = function () {
+        GM_tick(performance.now());
+      }
+
+      const isMultiplayer = function () {
+        if (typeof GM_is_multiplayer !== 'function') {
+          return false;
+        }
+
+        return GM_is_multiplayer() !== 0;
+      }
+
+      document.addEventListener('visibilitychange', function () {
+        if (!isMultiplayer()) {
+          return;
+        }
+
+        if (document.visibilityState === 'hidden') {
+          worker.postMessage({run: true, fps: 60});
+        } else {
+          worker.postMessage({run: false});
+        }
+      });
+    </script>
+
+    <script type="text/javascript">
+      const CHANGE_ASPECT_RATIO = true;
+
+      var bodyElement = document.getElementsByTagName("body")[0];
+      var statusElement = document.getElementById("status");
+      var progressElement = document.getElementById("progress");
+      var spinnerElement = document.getElementById("spinner");
+      var canvasElement = document.getElementById("canvas");
+      var outputElement = document.getElementById("output");
+      var outputContainerElement = document.getElementById("output-container");
+      var qrElement = document.getElementById("QRCode");
+      var qr2Element = document.getElementById("QR2Code");
+      var qrButton = document.getElementById("QRButton");
+      var qr2Button = document.getElementById("QR2Button");
+      var pauseMenu = document.getElementById("pauseMenuContainer");
+      var resumeButton = document.getElementById("resumeButton");
+      var quitButton = document.getElementById("quitButton");
+
+      const messageContainerElement = document.getElementById("message-container");
+      const messagesElement = document.getElementById("messages");
+      let rollbackMessages = [];
+
+      let clearRollbackMessagesTimeoutId = -1;
+      const showRollbackMessage = function (message) {
+        let messages = "";
+        rollbackMessages.push(message);
+        rollbackMessages.forEach(m => messages += "<p>" + m + "</p>");
+
+        messagesElement.innerHTML = messages;
+        messageContainerElement.style.display = 'block';
+
+        if (clearRollbackMessagesTimeoutId === -1) {
+          clearTimeout(clearRollbackMessagesTimeoutId);
+        }
+        clearRollbackMessagesTimeoutId = setTimeout(clearRollbackMessages, 5000);
+      };
+
+      const clearRollbackMessages = function () {
+        clearRollbackMessagesTimeoutId = -1;
+        rollbackMessages = [];
+        messageContainerElement.style.display = 'none';
+      };
+
+      var startingHeight, startingWidth;
+      var startingAspect;
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: (function () {
+          var element = document.getElementById("output");
+          if (element) element.value = ""; // clear browser cache
+          return function (text) {
+            if (arguments.length > 1)
+              text = Array.prototype.slice.call(arguments).join(" ");
+            // These replacements are necessary if you render to raw HTML
+            //text = text.replace(/&/g, "&amp;");
+            //text = text.replace(/</g, "&lt;");
+            //text = text.replace(/>/g, "&gt;");
+            //text = text.replace('\n', '<br>', 'g');
+            console.log(text);
+            if (text === "Entering main loop.") {
+              // It seems that this text ensures game is loaded.
+              ensureAspectRatio();
+            }
+            if (element) {
+              element.value += text + "\n";
+              element.scrollTop = element.scrollHeight; // focus on bottom
+            }
+          };
+        })(),
+        printErr: function (text) {
+          if (arguments.length > 1)
+            text = Array.prototype.slice.call(arguments).join(" ");
+          console.error(text);
+          if (outputElement) {
+            outputElement.value += "[err] " + text + "\n";
+            outputElement.scrollTop = outputElement.scrollHeight;
+          }
+        },
+        canvas: (function () {
+          var canvas = document.getElementById("canvas");
+
+          return canvas;
+        })(),
+        setStatus: function (text) {
+          if (!Module.setStatus.last)
+            Module.setStatus.last = { time: Date.now(), text: "" };
+          if (text === Module.setStatus.last.text) return;
+          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+          var now = Date.now();
+          if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
+          Module.setStatus.last.time = now;
+          Module.setStatus.last.text = text;
+          if (m) {
+            text = m[1];
+            progressElement.value = parseInt(m[2]) * 100;
+            progressElement.max = parseInt(m[4]) * 100;
+            progressElement.hidden = false;
+            spinnerElement.hidden = false;
+          } else {
+            progressElement.value = null;
+            progressElement.max = null;
+            progressElement.hidden = true;
+
+            // If there are no status text, we are finished and can display
+            // the canvas and hide the spinner
+            if (!text) {
+              spinnerElement.style.display = "none";
+              canvasElement.style.display = "block";
+            }
+          }
+          statusElement.innerHTML = text;
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function (left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          Module.setStatus(
+            left
+              ? "Preparing... (" +
+                  (this.totalDependencies - left) +
+                  "/" +
+                  this.totalDependencies +
+                  ")"
+              : "All downloads complete."
+          );
+        },
+      };
+      Module.setStatus("Downloading...");
+      window.onerror = function (event) {
+        // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+        Module.setStatus("Exception thrown, see JavaScript console");
+        spinnerElement.style.display = "none";
+        Module.setStatus = function (text) {
+          if (text) Module.printErr("[post-exception status] " + text);
+        };
+      };
+
+      // Route URL GET parameters to argc+argv
+      if (typeof window === "object") {
+        Module['arguments'] = window.location.search.substr(1).trim().split('&');
+        // If no args were passed arguments = [''], in which case kill the single empty string.
+        if (!Module['arguments'][0]) {
+          Module['arguments'] = [];
+        }
+      }
+
+      /*
+      var g_extLostContext = null;
+
+      function toggleWebGLContext() {
+        if (g_extLostContext == null) {
+          var canvas = document.getElementById('canvas');
+          var gl = canvas.getContext('webgl2');
+          g_extLostContext = gl.getExtension('WEBGL_lose_context');
+        } // end if
+        var button = document.getElementById("webglbutton");
+        var text = button.textContent || button.innerText;
+        if (text.trim() == "Lose WebGL Context") {
+          g_extLostContext.loseContext();
+          button.textContent = "Restore WebGL Context";
+        } // end if
+        else {
+          g_extLostContext.restoreContext();
+          button.textContent = "Lose WebGL Context";
+          g_extLostContext = null;
+        } // end else
+      }
+      */
+      function toggleElement(id) {
+        var elem = document.getElementById(id);
+        if (elem) {
+          elem.style.display = elem.style.display == 'block' ? 'none' : 'block';
+        }
+      }
+
+      var g_pWadLoadCallback = undefined;
+      function setWadLoadCallback( _wadLoadCallback ) 
+      {
+        g_pWadLoadCallback = _wadLoadCallback;
+      }
+
+      var g_pAddAsyncMethod = -1;
+
+      function setAddAsyncMethod( asyncMethod )
+      {
+        g_pAddAsyncMethod = asyncMethod;
+      }
+
+      var g_pJSExceptionHandler = undefined;
+
+      function setJSExceptionHandler( exceptionHandler )
+      {
+        if (typeof exceptionHandler == "function") {
+            g_pJSExceptionHandler = exceptionHandler;
+        } // end if
+      } // end setJSExceptionHandler
+
+      function hasJSExceptionHandler()
+      {
+        return (g_pJSExceptionHandler != undefined) && (typeof g_pJSExceptionHandler == "function");
+      } // end hasJSExceptionHandler
+
+      function doJSExceptionHandler( exceptionJSON )
+      {
+        if (typeof g_pJSExceptionHandler == "function") {
+          var exception = JSON.parse( exceptionJSON );
+          g_pJSExceptionHandler( exception );
+        } // end if
+      } // end doJSExceptionHandler
+
+      function manifestFiles()
+      {
+        return [ "runner.data",
+"runner.js",
+"runner.wasm",
+"audio-worklet.js",
+"acolyte_finaltama_1.ogg",
+"acolyte_finaltama_2.ogg",
+"afterglow.ogg",
+"ambulance.ogg",
+"arcade_menu_loop.ogg",
+"arcade_menu_muffled.ogg",
+"arcade_results_loop.ogg",
+"arcade_reward_loop.ogg",
+"ast_341_postcredits.ogg",
+"ast_341_start.ogg",
+"ast_341_yes_halfgot.ogg",
+"ast_341_yes_halfnotgot.ogg",
+"ast_bg_audio.ogg",
+"ast_start_tarovox.ogg",
+"ast_start_tarovoxno.ogg",
+"ast_start_tarovoxyes_2_.ogg",
+"battle2.ogg",
+"battle3.ogg",
+"battle_caverns.ogg",
+"battle_solar.ogg",
+"battle_toughen.ogg",
+"bgm_store_350.ogg",
+"bgs_story_beach.ogg",
+"bgs_story_birds.ogg",
+"bgs_story_birds_eq.ogg",
+"bgs_story_earthquake.ogg",
+"bgs_story_exterior_people.ogg",
+"bgs_story_fire.ogg",
+"bgs_story_interior_people.ogg",
+"bgs_story_interior_room.ogg",
+"bgs_story_night.ogg",
+"bgs_story_rain.ogg",
+"bgs_story_road.ogg",
+"bgs_story_shinjuku.ogg",
+"bgs_story_underground.ogg",
+"boss.ogg",
+"boss_crystal.ogg",
+"boss_jazz.ogg",
+"boss_major.ogg",
+"boss_mitzi_2.ogg",
+"burst_intervention_for_cherry.ogg",
+"buzzer.ogg",
+"carousel.ogg",
+"carpass.ogg",
+"ch2intro.ogg",
+"cherry__1_.ogg",
+"clair_de_lune.ogg",
+"coin1.ogg",
+"collapse1.ogg",
+"computerbuzz.ogg",
+"convergence_impact.ogg",
+"convergence_intro_2_.ogg",
+"critical.ogg",
+"cursor.ogg",
+"cursor235.ogg",
+"damage1.ogg",
+"damage2.ogg",
+"ending.ogg",
+"explosion_april_21.ogg",
+"fail_hard.ogg",
+"finalchapterintro_intro.ogg",
+"finalchapterintro_loop.ogg",
+"final_credits_1.ogg",
+"flame.ogg",
+"flowloop_1_true.ogg",
+"flowloop_2_true.ogg",
+"flowloop_3_true.ogg",
+"flowloop_4_true.ogg",
+"flowloop_5_true.ogg",
+"flying_paradise_2.ogg",
+"fragile.ogg",
+"game.unx",
+"grandfinish.ogg",
+"gunshot.ogg",
+"hammer.ogg",
+"hanabi_vocaloff.ogg",
+"hitsound_note.ogg",
+"isthisit.ogg",
+"keyboard.ogg",
+"miss.ogg",
+"moonlit.ogg",
+"move.ogg",
+"music_bs_layer2.ogg",
+"music_chart_00.ogg",
+"music_chart_31vc1.ogg",
+"music_chart_321.ogg",
+"music_chart_89momentum.ogg",
+"music_chart_acil.ogg",
+"music_chart_acolyte.ogg",
+"music_chart_aleph.ogg",
+"music_chart_anarchic.ogg",
+"music_chart_angelstar.ogg",
+"music_chart_angelstarplus.ogg",
+"music_chart_angelswindow.ogg",
+"music_chart_apocalypse.ogg",
+"music_chart_apollo.ogg",
+"music_chart_aquaregia.ogg",
+"music_chart_arcady.ogg",
+"music_chart_astellion.ogg",
+"music_chart_asymmetry.ogg",
+"music_chart_attheend.ogg",
+"music_chart_attractor.ogg",
+"music_chart_avalon.ogg",
+"music_chart_avalonold.ogg",
+"music_chart_badsecret.ogg",
+"music_chart_bardess.ogg",
+"music_chart_bloom.ogg",
+"music_chart_bpm.ogg",
+"music_chart_brokenheart.ogg",
+"music_chart_c3c.ogg",
+"music_chart_calming.ogg",
+"music_chart_calypso.ogg",
+"music_chart_candy.ogg",
+"music_chart_cd.ogg",
+"music_chart_chrono.ogg",
+"music_chart_chronomia.ogg",
+"music_chart_claudia.ogg",
+"music_chart_collab_25c1.ogg",
+"music_chart_collab_7boss.ogg",
+"music_chart_collab_8boss1.ogg",
+"music_chart_collab_8boss2.ogg",
+"music_chart_collab_battle.ogg",
+"music_chart_collab_body.ogg",
+"music_chart_collab_city.ogg",
+"music_chart_collab_dreams.ogg",
+"music_chart_collab_et.ogg",
+"music_chart_collab_garden.ogg",
+"music_chart_collab_gormx.ogg",
+"music_chart_collab_ign.ogg",
+"music_chart_collab_image.ogg",
+"music_chart_collab_loop.ogg",
+"music_chart_collab_lumen.ogg",
+"music_chart_collab_multi.ogg",
+"music_chart_collab_multi_full.ogg",
+"music_chart_collab_night.ogg",
+"music_chart_collab_night552.ogg",
+"music_chart_collab_novena.ogg",
+"music_chart_collab_precious.ogg",
+"music_chart_collab_prp.ogg",
+"music_chart_collab_punch.ogg",
+"music_chart_collab_real.ogg",
+"music_chart_collab_san.ogg",
+"music_chart_collab_secil.ogg",
+"music_chart_collab_soma1.ogg",
+"music_chart_collab_soma2.ogg",
+"music_chart_collab_star.ogg",
+"music_chart_collab_time.ogg",
+"music_chart_collab_trip.ogg",
+"music_chart_collab_ult.ogg",
+"music_chart_collab_until.ogg",
+"music_chart_collab_wave.ogg",
+"music_chart_collab_worn.ogg",
+"music_chart_concrete.ogg",
+"music_chart_confecute.ogg",
+"music_chart_convergence.ogg",
+"music_chart_cosmo.ogg",
+"music_chart_courage.ogg",
+"music_chart_crack.ogg",
+"music_chart_creation.ogg",
+"music_chart_credits.ogg",
+"music_chart_credits_encore.ogg",
+"music_chart_crimson.ogg",
+"music_chart_crosshatch.ogg",
+"music_chart_cycles.ogg",
+"music_chart_cyclical.ogg",
+"music_chart_desparola.ogg",
+"music_chart_domain.ogg",
+"music_chart_doppelganger.ogg",
+"music_chart_dracula.ogg",
+"music_chart_dragon.ogg",
+"music_chart_dual.ogg",
+"music_chart_endless.ogg",
+"music_chart_endsummer.ogg",
+"music_chart_energy.ogg",
+"music_chart_eo.ogg",
+"music_chart_ephemeral.ogg",
+"music_chart_era.ogg",
+"music_chart_esm.ogg",
+"music_chart_eva.ogg",
+"music_chart_example.ogg",
+"music_chart_execute.ogg",
+"music_chart_execution.ogg",
+"music_chart_exterminate.ogg",
+"music_chart_f1055.ogg",
+"music_chart_farewell.ogg",
+"music_chart_firstbreath.ogg",
+"music_chart_fixations.ogg",
+"music_chart_foolish.ogg",
+"music_chart_fuli.ogg",
+"music_chart_fulibuster.ogg",
+"music_chart_gauntlet.ogg",
+"music_chart_gengaozo.ogg",
+"music_chart_goodrage.ogg",
+"music_chart_grode.ogg",
+"music_chart_grodefrums.ogg",
+"music_chart_grodermx.ogg",
+"music_chart_grodescarer.ogg",
+"music_chart_happygo.ogg",
+"music_chart_heptagramme.ogg",
+"music_chart_hotline.ogg",
+"music_chart_https.ogg",
+"music_chart_idealized.ogg",
+"music_chart_infiniteenergy.ogg",
+"music_chart_ione.ogg",
+"music_chart_isthisit.ogg",
+"music_chart_lastpage.ogg",
+"music_chart_lastwish.ogg",
+"music_chart_libertia.ogg",
+"music_chart_lockedout.ogg",
+"music_chart_lostcity.ogg",
+"music_chart_lostconnection.ogg",
+"music_chart_luminaria.ogg",
+"music_chart_macro.ogg",
+"music_chart_marenol.ogg",
+"music_chart_memories.ogg",
+"music_chart_minus1.ogg",
+"music_chart_moreicarry.ogg",
+"music_chart_multigrode.ogg",
+"music_chart_mysterious.ogg",
+"music_chart_n1.ogg",
+"music_chart_n2.ogg",
+"music_chart_n3.ogg",
+"music_chart_n4.ogg",
+"music_chart_n6.ogg",
+"music_chart_n7.ogg",
+"music_chart_nhelv.ogg",
+"music_chart_nightfright.ogg",
+"music_chart_nightshade.ogg",
+"music_chart_nonsense.ogg",
+"music_chart_nulctrl.ogg",
+"music_chart_nulctrlex.ogg",
+"music_chart_nullbreak.ogg",
+"music_chart_obair.ogg",
+"music_chart_octava.ogg",
+"music_chart_opslimone.ogg",
+"music_chart_options.ogg",
+"music_chart_orphen.ogg",
+"music_chart_orphenold.ogg",
+"music_chart_pictured.ogg",
+"music_chart_picturedenc.ogg",
+"music_chart_plaudite.ogg",
+"music_chart_poisongarden.ogg",
+"music_chart_prime.ogg",
+"music_chart_prismatic.ogg",
+"music_chart_pygmalion.ogg",
+"music_chart_pyromania.ogg",
+"music_chart_quasar.ogg",
+"music_chart_ram.ogg",
+"music_chart_random.ogg",
+"music_chart_reboot.ogg",
+"music_chart_refract.ogg",
+"music_chart_rena.ogg",
+"music_chart_revelation.ogg",
+"music_chart_ruinatedwinds.ogg",
+"music_chart_rush.ogg",
+"music_chart_safestate.ogg",
+"music_chart_scarlet.ogg",
+"music_chart_seeyoumove.ogg",
+"music_chart_self.ogg",
+"music_chart_sentinel.ogg",
+"music_chart_septima.ogg",
+"music_chart_seraphiel.ogg",
+"music_chart_shatteredsky.ogg",
+"music_chart_showdown.ogg",
+"music_chart_signals.ogg",
+"music_chart_simulated.ogg",
+"music_chart_singularity.ogg",
+"music_chart_sky.ogg",
+"music_chart_slic.ogg",
+"music_chart_smots.ogg",
+"music_chart_solomon.ogg",
+"music_chart_soyoufelt.ogg",
+"music_chart_spelldiver.ogg",
+"music_chart_spincycle.ogg",
+"music_chart_starcrashers.ogg",
+"music_chart_stardust.ogg",
+"music_chart_stargazers.ogg",
+"music_chart_stellaria.ogg",
+"music_chart_sternstunde.ogg",
+"music_chart_stopmotion.ogg",
+"music_chart_supernova.ogg",
+"music_chart_surtr.ogg",
+"music_chart_synthesis.ogg",
+"music_chart_synthesizerparty.ogg",
+"music_chart_t.ogg",
+"music_chart_taffy.ogg",
+"music_chart_takayama.ogg",
+"music_chart_tavgha.ogg",
+"music_chart_tenpo.ogg",
+"music_chart_terabyte.ogg",
+"music_chart_terabyteenc.ogg",
+"music_chart_terabytefull.ogg",
+"music_chart_there.ogg",
+"music_chart_tiebreaker1.ogg",
+"music_chart_tormented.ogg",
+"music_chart_tutorial.ogg",
+"music_chart_ua.ogg",
+"music_chart_ultimatum.ogg",
+"music_chart_unraveling.ogg",
+"music_chart_unsigned.ogg",
+"music_chart_untechnical.ogg",
+"music_chart_utf.ogg",
+"music_chart_valor.ogg",
+"music_chart_vol.ogg",
+"music_chart_voltage.ogg",
+"music_chart_wavetapper.ogg",
+"music_chart_whatyoulove.ogg",
+"music_chart_wolv.ogg",
+"music_chart_xn.ogg",
+"music_chart_yamai.ogg",
+"music_chart_zylph.ogg",
+"music_credits_medley.ogg",
+"music_story_allison.ogg",
+"music_story_allison2.ogg",
+"music_story_ambientstopmotion.ogg",
+"music_story_catstory.ogg",
+"music_story_ch1credits.ogg",
+"music_story_ch2credits.ogg",
+"music_story_ch3badend.ogg",
+"music_story_ch3truecredits.ogg",
+"music_story_ch3_episode_22.ogg",
+"music_story_ch3_eri_gun.ogg",
+"music_story_ch4_dawnbetray.ogg",
+"music_story_ch4_dawnbetray2.ogg",
+"music_story_ch4_intervention.ogg",
+"music_story_ch4_punch.ogg",
+"music_story_ch4_tsuki.ogg",
+"music_story_ch5_apocalypse.ogg",
+"music_story_ch5_conversation.ogg",
+"music_story_ch5_darkness.ogg",
+"music_story_ch5_neutral.ogg",
+"music_story_ch5_relevation.ogg",
+"music_story_duskbreaker.ogg",
+"music_story_kanshi.ogg",
+"music_story_worldkeeper.ogg",
+"newintroforastellion.ogg",
+"newtextsnd.ogg",
+"night_city.ogg",
+"notesnd_1.ogg",
+"notesnd_2.ogg",
+"notesnd_3.ogg",
+"notesnd_no.ogg",
+"notesound_eyeah.ogg",
+"nothingness_second_loop.ogg",
+"plaudite_cyc_p.ogg",
+"plaudite_cyc_u.ogg",
+"plaudite_cyc_v.ogg",
+"plaudite_ending.ogg",
+"powerup24.ogg",
+"preview_00.ogg",
+"preview_31vc1.ogg",
+"preview_321.ogg",
+"preview_89momentum.ogg",
+"preview_acil.ogg",
+"preview_acolyte.ogg",
+"preview_aleph.ogg",
+"preview_anarchic.ogg",
+"preview_angelstar.ogg",
+"preview_angelswindow.ogg",
+"preview_apocalypse.ogg",
+"preview_apollo.ogg",
+"preview_aquaregia.ogg",
+"preview_arcady.ogg",
+"preview_astellion.ogg",
+"preview_asymmetry.ogg",
+"preview_attheend.ogg",
+"preview_attractor.ogg",
+"preview_avalon.ogg",
+"preview_avalonold.ogg",
+"preview_badsecret.ogg",
+"preview_bardess.ogg",
+"preview_bloom.ogg",
+"preview_bpm.ogg",
+"preview_brokenheart.ogg",
+"preview_c3c.ogg",
+"preview_calming.ogg",
+"preview_calypso.ogg",
+"preview_candy.ogg",
+"preview_cd.ogg",
+"preview_chrono.ogg",
+"preview_chronomia.ogg",
+"preview_claudia.ogg",
+"preview_collab_25c1.ogg",
+"preview_collab_7boss.ogg",
+"preview_collab_8boss1.ogg",
+"preview_collab_8boss2.ogg",
+"preview_collab_battle.ogg",
+"preview_collab_body.ogg",
+"preview_collab_city.ogg",
+"preview_collab_dreams.ogg",
+"preview_collab_et.ogg",
+"preview_collab_garden.ogg",
+"preview_collab_gormx.ogg",
+"preview_collab_ign.ogg",
+"preview_collab_image.ogg",
+"preview_collab_loop.ogg",
+"preview_collab_lumen.ogg",
+"preview_collab_multi.ogg",
+"preview_collab_multi_full.ogg",
+"preview_collab_night.ogg",
+"preview_collab_novena.ogg",
+"preview_collab_precious.ogg",
+"preview_collab_prp.ogg",
+"preview_collab_punch.ogg",
+"preview_collab_real.ogg",
+"preview_collab_san.ogg",
+"preview_collab_secil.ogg",
+"preview_collab_soma1.ogg",
+"preview_collab_soma2.ogg",
+"preview_collab_star.ogg",
+"preview_collab_time.ogg",
+"preview_collab_trip.ogg",
+"preview_collab_ult.ogg",
+"preview_collab_until.ogg",
+"preview_collab_wave.ogg",
+"preview_collab_worn.ogg",
+"preview_concrete.ogg",
+"preview_confecute.ogg",
+"preview_convergence.ogg",
+"preview_cosmo.ogg",
+"preview_courage.ogg",
+"preview_crack.ogg",
+"preview_creation.ogg",
+"preview_credits.ogg",
+"preview_creditsenc.ogg",
+"preview_crimson.ogg",
+"preview_crosshatch.ogg",
+"preview_cycles.ogg",
+"preview_cyclical.ogg",
+"preview_desparola.ogg",
+"preview_domain.ogg",
+"preview_doppelganger.ogg",
+"preview_dracula.ogg",
+"preview_dragon.ogg",
+"preview_dual.ogg",
+"preview_endless.ogg",
+"preview_endsummer.ogg",
+"preview_energy.ogg",
+"preview_eo.ogg",
+"preview_ephemeral.ogg",
+"preview_era.ogg",
+"preview_esm.ogg",
+"preview_eva.ogg",
+"preview_execute.ogg",
+"preview_execution.ogg",
+"preview_exterminate.ogg",
+"preview_f1055.ogg",
+"preview_farewell.ogg",
+"preview_firstbreath.ogg",
+"preview_fixations.ogg",
+"preview_foolish.ogg",
+"preview_fuli.ogg",
+"preview_fulibuster.ogg",
+"preview_gauntlet.ogg",
+"preview_generic.ogg",
+"preview_gengaozo.ogg",
+"preview_goodrage.ogg",
+"preview_grode.ogg",
+"preview_grodefrums.ogg",
+"preview_grodermx.ogg",
+"preview_grodescarer.ogg",
+"preview_happygo.ogg",
+"preview_heptagramme.ogg",
+"preview_hotline.ogg",
+"preview_https.ogg",
+"preview_idealized.ogg",
+"preview_infiniteenergy.ogg",
+"preview_ione.ogg",
+"preview_isthisit.ogg",
+"preview_lastpage.ogg",
+"preview_lastwish.ogg",
+"preview_libertia.ogg",
+"preview_lockedout.ogg",
+"preview_lostcity.ogg",
+"preview_lostconnection.ogg",
+"preview_luminaria.ogg",
+"preview_macro.ogg",
+"preview_marenol.ogg",
+"preview_memories.ogg",
+"preview_minus1.ogg",
+"preview_moreicarry.ogg",
+"preview_multigrode.ogg",
+"preview_mysterious.ogg",
+"preview_n1.ogg",
+"preview_n2.ogg",
+"preview_n3.ogg",
+"preview_n4.ogg",
+"preview_n6.ogg",
+"preview_n7.ogg",
+"preview_nhelv.ogg",
+"preview_nightfright.ogg",
+"preview_nightshade.ogg",
+"preview_nonsense.ogg",
+"preview_nulctrl.ogg",
+"preview_nullbreak.ogg",
+"preview_obair.ogg",
+"preview_octava.ogg",
+"preview_opslimone.ogg",
+"preview_options.ogg",
+"preview_orphen.ogg",
+"preview_orphenold.ogg",
+"preview_pictured.ogg",
+"preview_plaudite.ogg",
+"preview_poisongarden.ogg",
+"preview_prime.ogg",
+"preview_prismatic.ogg",
+"preview_pygmalion.ogg",
+"preview_pyromania.ogg",
+"preview_quasar.ogg",
+"preview_ram.ogg",
+"preview_random.ogg",
+"preview_reboot.ogg",
+"preview_refract.ogg",
+"preview_rena.ogg",
+"preview_revelation.ogg",
+"preview_ruinatedwinds.ogg",
+"preview_rush.ogg",
+"preview_safestate.ogg",
+"preview_scarlet.ogg",
+"preview_seeyoumove.ogg",
+"preview_self.ogg",
+"preview_sentinel.ogg",
+"preview_septima.ogg",
+"preview_seraphiel.ogg",
+"preview_shatteredsky.ogg",
+"preview_showdown.ogg",
+"preview_signals.ogg",
+"preview_simulated.ogg",
+"preview_singularity.ogg",
+"preview_sky.ogg",
+"preview_slic.ogg",
+"preview_smots.ogg",
+"preview_solomon.ogg",
+"preview_soyoufelt.ogg",
+"preview_spelldiver.ogg",
+"preview_spincycle.ogg",
+"preview_starcrashers.ogg",
+"preview_stardust.ogg",
+"preview_stargazers.ogg",
+"preview_stellaria.ogg",
+"preview_sternstunde.ogg",
+"preview_stopmotion.ogg",
+"preview_supernova.ogg",
+"preview_surtr.ogg",
+"preview_synthesis.ogg",
+"preview_synthesizerparty.ogg",
+"preview_t.ogg",
+"preview_taffy.ogg",
+"preview_takayama.ogg",
+"preview_tavgha.ogg",
+"preview_tenpo.ogg",
+"preview_terabyte.ogg",
+"preview_terabyteenc.ogg",
+"preview_there.ogg",
+"preview_tiebreaker1.ogg",
+"preview_tormented.ogg",
+"preview_ua.ogg",
+"preview_ultimatum.ogg",
+"preview_unraveling.ogg",
+"preview_unsigned.ogg",
+"preview_untechnical.ogg",
+"preview_utf.ogg",
+"preview_valor.ogg",
+"preview_vol.ogg",
+"preview_voltage.ogg",
+"preview_wavetapper.ogg",
+"preview_whatyoulove.ogg",
+"preview_wolv.ogg",
+"preview_xn.ogg",
+"preview_yamai.ogg",
+"preview_zylph.ogg",
+"rare.ogg",
+"renaintro.ogg",
+"renastretch.ogg",
+"rpg_finalcliffs_mus.ogg",
+"se1.ogg",
+"se10.ogg",
+"se11.ogg",
+"se12.ogg",
+"se13.ogg",
+"se14.ogg",
+"se15.ogg",
+"se16.ogg",
+"se2.ogg",
+"se3.ogg",
+"se4.ogg",
+"se5.ogg",
+"se6.ogg",
+"se7.ogg",
+"se8.ogg",
+"se9.ogg",
+"sect10.ogg",
+"select.ogg",
+"self_interlude.ogg",
+"sfx_count1.ogg",
+"sfx_count2.ogg",
+"sfx_count3.ogg",
+"sfx_failsong.ogg",
+"sfx_note_hit.ogg",
+"sfx_results_tick.ogg",
+"sfx_results_tick_v2.ogg",
+"sfx_solve_puzzle.ogg",
+"sfx_songsel_beginsong.ogg",
+"sfx_songsel_cursor.ogg",
+"sfx_songsel_cursorold.ogg",
+"sfx_songsel_diff.ogg",
+"sfx_songsel_keys.ogg",
+"sfx_songsel_select.ogg",
+"sfx_songsel_selectold.ogg",
+"sfx_songsel_sweep.ogg",
+"sfx_startsong_2024.ogg",
+"sfx_startsong_new.ogg",
+"sfx_tvo_activate.ogg",
+"sfx_view_log.ogg",
+"sfx_wc_ready.ogg",
+"sfx_wc_unready.ogg",
+"shatterfx.ogg",
+"shift.ogg",
+"shiftreverse.ogg",
+"slash1.ogg",
+"slash1341.ogg",
+"snd_atick.ogg",
+"snd_disboard.ogg",
+"snhit.ogg",
+"sound0.ogg",
+"splash1.ogg",
+"sysmusic_conflict_results.ogg",
+"sysmusic_cyberpunks_login.ogg",
+"sysmusic_green_menu.ogg",
+"sysmusic_purple.ogg",
+"textsnd.ogg",
+"theriver.ogg",
+"victory.ogg",
+"vo_convergence.ogg",
+"vo_firstbreath.ogg",
+"vo_libertia.ogg",
+"vo_supernova.ogg",
+"weh1.ogg",
+"weh2.ogg",
+"weh3.ogg",
+"weh4.ogg",
+"worldcrosshalfpipe_muted.ogg",
+"worldcrosshalfpipe_real.ogg",
+"wrong.ogg",
+"_169_aaaah_trimmed.ogg",
+"_18impact.ogg",
+"_18intro.ogg",
+"_2024intro_intro.ogg",
+"_2024intro_loop.ogg",
+"_2024mainmenu.ogg",
+"_2024results.ogg",
+"_2024resultsleadin.ogg",
+"_2025intro_intro.ogg",
+"_2025intro_loop.ogg" ].join( ";");
+      }
+
+      function manifestFilesMD5()
+      {
+        return [ "5289293cec7c494bdd44addf3ee99e55",
+"fee5361cac7643b1bb0c6304e8dd7a7c",
+"3c133c0669b7bf22dcb6b9cbd5c31548",
+"e8f1e8db8cf996f8715a6f2164c2e44e",
+"857f9c63593d52f83f6eeee340630b99",
+"4b9a34be264f71174c4a57f6abf4ffe4",
+"3914a61767477a86c498eab190e00fd9",
+"0f09e9da1c0473fc2f2dd365337006b7",
+"6982acb93d763f9bda7ceabaa54c24d3",
+"a58324983f4616e2bd26e44b5e0279c4",
+"d9ab3ce1b101ff8340ef9059af006be4",
+"7d2bda76c87bf5dd22633755fbf6b2ee",
+"66a6bfe0ada508820b811000b73d615c",
+"7b94c6810d618dc16d5c39dea98fda2c",
+"a26c9c4966e1823a1153a5d8e98687a8",
+"11f22c4101847e6839fe7cd618818068",
+"15682ee86567352781dde2f8dda291b5",
+"eb3da9e26625e539508c4ce2444ba827",
+"d0e2be057b2eb35924ee0425cd27706f",
+"5c349854c43c263ee3daa45dac850767",
+"837616e520177c03a4263a95e6bbfa51",
+"8d322c2fdf1162592df00fb19721d26c",
+"62f114646c1bbdd23dc9e8ed5a64be99",
+"b8f87e770bde61474274de527d6f619d",
+"a2e8f7bf5ba729e4d9ac8673c8f8adc3",
+"0bfa6efebcb26bd967a7c86e3f7d45cb",
+"e0f5da19486ddf2381eccb4827eb15b3",
+"69944d60aa036bc0e7ad8b34a507ccb5",
+"6e3877052e4d2f8b83816c4b3dfbdcdf",
+"7ee78cfa3d7544ce0c2478fdb02dc575",
+"f896b0be4012c78a670bcde477251ff2",
+"2604901ec8fb9de92ac1831bfebf34b2",
+"39eb1280068476830b4dbfa9f5726a20",
+"7d3e5bb4cd8464aa754b59cd6ce22362",
+"4516af5a9b5c138c0f4ac2c7e21a46cf",
+"fce96e1a5be922447622f83d83ac0455",
+"0cbabe75ae245bed1c468a2f94297813",
+"f3ad55066b0125e1fa28b1aa8185c52d",
+"9a05a665c4e379c210000974fa97d00b",
+"553ce4dc6dcdf402317acc6639376ab3",
+"66c2871b74582ec3cde39042bd65e97e",
+"7c742dd93d86386e75dcd99490c5878c",
+"3f5acb9b00c6cfe8e51bb0679788125f",
+"08cd7511e4c810016dc0e1cc29c57a85",
+"5fdfe6422f821f6db87b169a58e2315f",
+"ab8217cbec98a4096839c238687a3a26",
+"51f6305c471ece0f0de59546f740f511",
+"1abc8d04f617144155f80e64269e5588",
+"6590efe448341e4237d9fae2ed2331d1",
+"3ac19f32abdbe9fd8014a7e8224d365d",
+"1b6dbf46fef6a6054df7415caf48226e",
+"38b4fdee3cd3d40a117da324efcea60b",
+"f8b4cfe7465154c8bebf5f34ad534ecd",
+"04700f351ebe0006dde1777009c3a988",
+"a964dc90c72b69f53b15d43c996426b7",
+"c4a9558cf7b767f836b109b4060a7737",
+"1f776bd5d4571a0b590b3e37082f06a3",
+"e6ebcc1551824a958b89bcb824536e79",
+"f10850522004c27213e89095a7741411",
+"82156005c2ed6b621cb2d37e01c88563",
+"63759f82e861164f0928a3bdbccbd218",
+"f05d2598e15ac40a13e722fa7f3c9688",
+"e34508fc0e84117988e64730307385d5",
+"19ebe26c04fb65cf8d615954cfc9b104",
+"2c3322f396cd00dfcf9550ae95aa01d3",
+"d7a330831f06572fa4907134355e86ab",
+"b98b05071eacbdba4b274bce9f38955a",
+"562077cddbf2499c2f1f7f339c3bd783",
+"92bee99c3fa00baf7cc766a471758e63",
+"c348ca4b4cf6c93930734fb4e652774e",
+"bbecf44ae4d195f8d40459f0e1b0cfe0",
+"430fd90ea79d4c90be821930ecdd9566",
+"ac52f0c9522cd5d95208e131c5384b45",
+"8e8054bf28a4111ff5f48ee134d60b9e",
+"17584f66299d6dca4493a22f0b137046",
+"4b273b29a71db81287317fd03cb40254",
+"06ab2f8957b163f767c7c30e875ea282",
+"83b538a9ab57743b796b7e8d5b454dc9",
+"9d8bca6039d338197cbfe7e94cef4682",
+"f2c6574a52d76a19b7b14643fddbccac",
+"b688a2bc09cd648d53fd784a74233ccf",
+"c5330a436d99d9a543c8ad197b71d8d0",
+"936e78a693165a3743858fafd241d22f",
+"7dff4074151ed1defd48bb8e0f61b631",
+"6614804116e5992a117b6c9823437cd3",
+"418be3a14b6d168d3ee694acc3b411ed",
+"9a05a665c4e379c210000974fa97d00b",
+"aa0db629ee58922576f45dfa8b3cd859",
+"ec7518137e9efba26e3394b1163cc3a1",
+"d6e08ec8fe1360d12ec22389d20c4e37",
+"1f2262a3a0e1608ca0a8ef77e6c8d8cf",
+"728392c21a11019278cd09fc9df6ce66",
+"c228a19b4fbac7adde4900cfc1e4d04f",
+"4df3d613fc678227cbc9edac68188b40",
+"2b0624bc5abf65d70d138d423fcb4e51",
+"cde8d1067e3b2e1ba1e7614d5c7b6e65",
+"981a4a67ac5e17bdba6f025a23741ba2",
+"181f743fae68bf7807cc5c1e8ee656f0",
+"061ad478c57f0db484e9f660d52c0480",
+"e7860df5b2ac71ade9bc08cd3e234114",
+"c66d5ea9f521a8837fdd618beaca80ef",
+"56bf8a0d1e6bdf319dc920a443821d5f",
+"6e32eaa71d2f316f5df2db8d0fa56c80",
+"b7ea113559068014a0d0e2b60dc2752d",
+"44d58ba37a30111ec300cbd7f28ef9f8",
+"7cb2d25374e8869fdf6f3c9b5e36e929",
+"088e3d26d8f3e99fde5d013207665524",
+"1c3d3dce70ddf82c31246264afff316f",
+"f48aefccc94190031ebba63824c7e8f1",
+"baf854fe57a3afa399b6dbdf2204101c",
+"92eb60f341b7777ca5eef3a70780e9b4",
+"8c89c4bd449ac65f2849b5444f72aec3",
+"c5a122a445be1ea9a6424d39b3944393",
+"ba5678caf244ad4e61cc9f86de24b510",
+"30e9b04b676ae62ac96346e3002d5664",
+"0fe5f721ab17ba501d053d7832301df4",
+"6d8a6e796ad5ea48548294e6a7c9c435",
+"b3f349b028fa26a51bacab737e16c3d9",
+"14ba7d28fc3f610c0a38b5c9dcb2bf54",
+"2a139012b38a24418a91ad5b6f1b342c",
+"35f053a887795725b5cf065178d75fc0",
+"9544b9d2655962391fb873cebf1683d4",
+"3887df937462c982905e483b5c0655bc",
+"bb3ef2f5fc89d558df6c4f3267b45791",
+"04e914e8faec654d5f61cd69bd30700f",
+"47171f584b2e7f6a42a3f6c18939a36e",
+"6be2594dd887b6f3ae94b2ce15cac291",
+"bc236aca4fe8542131035111dff5ffb8",
+"31122b2b3012f7cbb265fd473b976772",
+"3b43693b1b3df1e7dab06756aa88f057",
+"362ee89e6e4dbb98c307eb1902ea0b6a",
+"cadf311a08353ed4ff34a0d46dcc22ba",
+"dd658fda800733183ba5f8248547be09",
+"033eadf174279e7c74cf64cf6f08cb43",
+"45e2347e30c6f605637081eb1a0b79cf",
+"8fc59b23950f99a3f0cff4a002da8609",
+"5962cce61f097a53a7e2d42acea116f3",
+"4dc7b0b68b295a0409a55e4b60b97a03",
+"a8eef7b7aa2a0aea6d78fc9951a55ab6",
+"a8eef7b7aa2a0aea6d78fc9951a55ab6",
+"16aaa349d58463a3bad71aa392277e0e",
+"3d1cd685effbeef920a1ad345e3aaa81",
+"b702a9cb39b708d09f11a9d98701ed9d",
+"5342b60b4a5867e5a9a575e34ba082b3",
+"924cac8d3cbbab746c295d478fa05d27",
+"11cf8d6e02550748705c101232343c61",
+"188f1c26dba9171a95530d20d05bebea",
+"1144067155b1eac848e60c1151267a88",
+"c72086a2ef7aa8a62808cb8072019cdb",
+"81e45c262ab09c38142ab89db3892c1c",
+"e29d7056ad5d1d96e550794359968a97",
+"64b64bcc0d5172f295ceba33081c8d52",
+"96e53dd83d66fc7ed8b6455dfb4c623b",
+"a0263fd833f161134de3185567759cb4",
+"f9fd6556e3bfe19bda80a41ab6a0f680",
+"c44b3a1fad6c6c6bccac6def10b953f0",
+"9a381bd54afd1108a4736002e51bdcc3",
+"0dc802ddbb4bfa3cf6728681f4242f3e",
+"fbbcd3889ae28ad00373d8acbdf49c65",
+"f6e8cc9afc51d0f91d648001256bc2f3",
+"3b0493e8a0c3d9087b9c2bb5d6cc13d4",
+"3b5631a847a9de8eaab9c9a51080fa17",
+"70b9467db8a5567a59739eae0bc0ed89",
+"5b3d4b8bc9ed1f66d2048e399db130f9",
+"b48f6f984cbd0628d0372ab621085996",
+"65144c2804b485700e1d12d9fd704931",
+"1acf295171a6c3eb980668be58d826c8",
+"46eab40b697fe50ceaaee5d982e49df6",
+"b4943405928329507f3307c84c54eb6b",
+"4514afd9cc9ceb82912e956bb5067705",
+"8bfd5a0cdf93e31927ed24da5edb6479",
+"280e7f3cab9209f0f0614cd1920bf523",
+"fa1d2acc72f40e29266c337c5f7253ac",
+"aa55455a9b3e283e0ea1fae0c0dcafb8",
+"68a0cb4dd3195ffa8d138ab1846d6389",
+"edd4a373cf8b55ebb45c6d0c0b57d6eb",
+"bdad64fc2b4f526e9ff276b387fb84a8",
+"e14882a7c4b13d930b2c0f2ee0d98a66",
+"243e5dd175a38ae40953effb88ccc505",
+"fe355ec30770cc0bf0746e7fabaef6ba",
+"5dd3777bd5fa9e436fd27f3ce307ac47",
+"a3a757f49a2c82a2a04370483646a06e",
+"441813d8fcd72e5b148d221390704f13",
+"418d06879a4c831e59c23260665b7736",
+"8789cbe6bcac89ebfaed22aee34c75f7",
+"58be4459b6d5ba45d3869684ce086e91",
+"503ba633d4bdf3ba34d971f286756dec",
+"2e07f0673ab95799b7324b03e11f6225",
+"9b962e8d1941b42f1cdd6d833e260a4c",
+"8d6d9fb260a4a338da7cdc6f859636c6",
+"57b34d2ab41f0600745c851604280df7",
+"6481f06d8ca3e2bbf1ece6c60ce84197",
+"33e155a3585aa3afb8aebef2e07f1991",
+"16ec4c01ee18c7e52755204f9491136f",
+"2ae2c902e86fabcd80d008623cef4466",
+"dbe3bf10f6767227533f9710bd2c9cb9",
+"e7d7782cd54acc499c8439e2ef25af49",
+"0929421aeb852964ba76f2b90e82b355",
+"4c0fc40ac52b287a5538e6afe70d4e67",
+"760dba0bdadc188acda93c0f386bde6b",
+"b2f325a00c58689c6b81c116fbf07b5f",
+"be8db677c462284e60e065efda851d3f",
+"14d23ae79ce12725ad3de5cff619dddb",
+"d4903f556fcbce313eea139398a80e37",
+"7d320786a35abd255cfdf63a25544e61",
+"277872aee1f8dfde17a3b51bd64062b9",
+"056f275253bd3df443b2d235d9f2cfa6",
+"f1be751a3be581ecd21f0f2c2a51c67a",
+"b5db038f55e98df10c62a8cdea2d6847",
+"ccd5724dee403da840d26fd9bb2f84c3",
+"cbc34b8771f12898d99ebc2cf46286f1",
+"74ded1789fba960cb1d6e4b2203c7e9c",
+"008f76d48a84b9d395c9499610b45a3b",
+"ff2c82c38b06279e2aaf33d415827fc1",
+"1e6f23bb84cb2c3f104bb1acace2e680",
+"02d32e6f84d6c89bdb5e8870ffea079f",
+"e0342c62551e374d800c9a3cea88930a",
+"e2034bfaa6f165198e61b1447e114817",
+"288fc202121c734f3624bca27a705a75",
+"43b4627343f1f3e17b2f883e5e049dd0",
+"31295b9024742313b1f8164125f1d137",
+"13366e90b733394b9b86322d53f72ecd",
+"5f823593f581fc2516cbdb9e7140b038",
+"cbe7e1c7db2921a28c4aacd0cc7e054c",
+"fe5d1a6c256fa6a2f290b1894525996e",
+"12f6a0f54edc67e03d0e8374f1260486",
+"daf0fb061c44fc8604730aabdbb97d1c",
+"da85a8ec4fe26d0ab3bf58969586f459",
+"7b7dea68ac9574cce02d1bf1fef35197",
+"846d7f841c148e5c870e873e07f8af2b",
+"bd42062771712787c19f76c59d4d800f",
+"4a997113a01e1e5c147bd8012a1b2172",
+"a3e26787435515e3e51021214fb9bb9b",
+"55f5232a65867719efbe797856d9823a",
+"905fe2da6ef50f9a022a7e96a9be44f9",
+"b1726cde69f4d5d2127566111d9fdaab",
+"8e80382db1e534e3dd296b1592016700",
+"bdc3d2309b0f0cf819eb4c51bfb65720",
+"bea412da08ac1a162f1190b9c85a18d0",
+"86b10ce484cb139c33f031e5068e1a27",
+"80444ccb3287556b97ed08fb04b619ee",
+"b50d5582f7e0b74d306407e27eb0daba",
+"663a87546d01f771a2f412bc4f01a518",
+"a06adf957e5d4180ed89cfebd393b7f0",
+"55fc45f5a044db892273e932503436bc",
+"c899bb1c44524c5da13fe0b6ca86c026",
+"d21f32d458531dd7c5bd459b5ecbdc9a",
+"059867b9f3b7043d3e58a11c49c38f14",
+"54468d236bdeb45fd3b1fc6bb02f4141",
+"43cf8fb10afde1852b9355c358e159e1",
+"a7846b398a84644c7aa718ef411853dc",
+"bba94dabf8e1b3e292c98b7b656b3cc5",
+"74510f81d8c02b474e315c109a9dcb6c",
+"caadadbd4f824f0a916bbf1d88ab9c70",
+"19f852a210ffb6711555c09350e2b1c8",
+"b5e99243f762d1776b1f4713fd144bd2",
+"00fe57038ca0c01fe21f2fbcf79e512f",
+"a6bcd5838d753085d5e8dce384efbe8f",
+"d59c5c45152cd6dad4f7dace01b1e448",
+"b29152ad851fc4f0eac77c7d1ad151f6",
+"149d1f9f6fd94142bc257b5357c89449",
+"e761f0d0f5821deff9e5dc469e802f2c",
+"7d4d42ab757c6a1bd8008b29a9f714c9",
+"1b58d3766fa36323e3bf6906792eaac6",
+"99339da2c6d43a4744eac9d8d723b8ac",
+"60ff6c7de0a974a7998dd9edf18ff198",
+"f386179e9f8c8543a2a2389e03da5fa6",
+"990bdb3e2007170510baad3e27d8a79f",
+"6636dfadec7dcbd3365e9cf62c1d1698",
+"d80461535083df27a713b2e7cc57a2d1",
+"80955af116379b19704c60472fe906d8",
+"57b5b9ab648d988a72ec17a29b22ab54",
+"5faf3bbd4b8d5a72103395798aa6751b",
+"736a913fab1a2d792a62ad038292d843",
+"953a332b22e57d632329ac8c1acbe912",
+"99e95f87c0ff2011b8b4f5cd6c232f78",
+"8950b3af80a6f88ede33efa29a04a7c1",
+"f7022d7493d3500447019ffdb6596e37",
+"a146a865cc3931f2ee77d011826532f0",
+"4ee777c5a5fe71f3f8a1dfbf27acefa5",
+"2458a73d164aff21df00ab50bfeb3588",
+"a594b863f5cd57be10e2cf3a7f8b7e48",
+"b915962ed7357507a841a048cd816ac0",
+"5220405f369a004df75e88238ef5292e",
+"4aa52e67e524951f0870e11c6008ef40",
+"c1d4213d8714073232fa19165bd3f2e2",
+"1297876c02e8adf9d3e01f016bdbbe96",
+"a5ef50006c40142eb2600f30563771d2",
+"fa3d07b2020fee94b92d0bf4c0e2359d",
+"54b91ecd1db26911eb944225f93eac76",
+"0e0ce8d47de59e3797a1e24dd672de7e",
+"86df3cca18596e18b5cb1e4b81c0b091",
+"8fb4add240c67c366608458d0c602b7b",
+"ed3566ce8de020f53445a1d98928334d",
+"b6f1b68679d008edb72a94450b91a8a2",
+"a87030653a87c50cfb2d656dcb4bf890",
+"bd8682cb02d0b86262267108a4c929a3",
+"c8db40f30253fe13b88934b808f4ea8a",
+"320f284b5288df7a6cf5aef8504daeab",
+"4d516e508fc0de66361c76108e20bd05",
+"25251f8cd69d53a6a857e53766067c9d",
+"ac3c736889c1e4ffb5a0a4e50a50ef16",
+"86ac8b417c131af93894d505f7e8d058",
+"cea9f3bab3a780bbc91f78998e581436",
+"0ed0dfdc841d81af5729f6767e1236c8",
+"da262f407edbb68936d27c82141da11f",
+"f9ed2e5bed7a45abec273042288916db",
+"03e8e352fe8bb7bde2f958daac6c80c5",
+"7899310bac59d450b036b0546952ca3d",
+"e93737fc400d6c65a3443d6ee14dcc50",
+"0108af40cd2cba334ceedccbabbce347",
+"9d27fd6159957493b912fb46cd8ad938",
+"e67af534f4f21645214921fb69d8c2ac",
+"855d4ffbf6b1a4d09f7370a975661079",
+"b5e02a552ff3c41985e81f01c7e7df87",
+"b3a506ab615448f3c3d883abfd0d4bf2",
+"b22a41bafa3eaaf114190852818abe44",
+"b2ad9160be8fcd750e5cb317ac203e6e",
+"f10e210086c03c2825e9538d5905124d",
+"b26d6d05aeced66cffb137e53e276724",
+"b9f1d8db652ade788f480106fbe8d58b",
+"3d8407131751539581d4c9913f2e7fe6",
+"eb3ce3aed63660a0173d6f912af4b836",
+"4935282c9e961d8321a0872e91101d84",
+"59afa6b2b6b86dab30d8e9ea9fa1dc30",
+"4fa2f9e563819ac80a55baa988f0cb55",
+"38996fd5071c74da35aedd59a7c27bc6",
+"c81806974b73132a30ab332d040e73e3",
+"050e0ce25babfdf2f8b7a49d5ab6d368",
+"923313a5248e4328f43a95a6ea491a76",
+"ab162219c5f9344fe3dc49c7a1916962",
+"a60fcff579422015b9d6b39651d16f11",
+"54ee3ad95cc741db216d8fa4ce043979",
+"6b53abed484e77aaa629f72260971953",
+"dbce2bd1c7410d09d53772705a99433e",
+"c2c47dc1760d39ec0c310968a6992de1",
+"c38a666cb80cbbb7a31c73d7b2dce900",
+"31a8329f6261e36fb16658caae97a64f",
+"5ebc2f15954bdf8bd2095fd3183ebe35",
+"6443d9ac863388b1ed41848d7e0414d7",
+"a3ac2c80ef0c02f8b4c0fd155e30356b",
+"63b870e61dbfbfb3313f8a81a68dd0cd",
+"7a5cd6217071dccf43fa9d8107af7b55",
+"c4a6f7c88ec1fd8b7d4bc005625c8236",
+"9813c49ed3dbbdb1d12b348c7b294c34",
+"7a5cd6217071dccf43fa9d8107af7b55",
+"9959ebae7cbcad935c06467c127f3eda",
+"af4a60b811cd503ab9c4468780c24a2f",
+"80a8dcf05c097ee4cd47c165499d9e29",
+"84a84bcde1a7395f2bb631cd373f2560",
+"cbc05bf826ac37a531077dfbd8b83ea3",
+"fd02cb574603ba8d2454e26192eaa290",
+"4cba9375366411d265a87cb6170d981f",
+"04281cc17d1b6187472228c8c6e469ba",
+"60f99d72f097e8cb2901af10a9aceb01",
+"9623f4e409ae4a112b1d5845c03c243a",
+"05f56d17f93c957ea334f60d1892445c",
+"4b0f6ed2459ffd76bcde74abc3cf8429",
+"20b6ddde64653cb082c0707c60ba2c7c",
+"21733b367e40e17da929d741e14e8525",
+"0f12bbfe2d509661459cee2e4ec3bd28",
+"0a33a0b535ff2c5dacfa31d1a8cacfcd",
+"c38c5c5968f49da8376b44419522b074",
+"a7e28db0231cdef833b11fca1fd0b260",
+"29e054aa465b658469aaf5ec4ee1221e",
+"f4cad51707dfbf50fb2a58e5ae861f5f",
+"0fe356e8c8bce5ba3983a40e959d3477",
+"f09136354671eb788466b4e620cbf3f3",
+"74f8ea8292b5c9a2eb129b8928d9151f",
+"baadee14f20d3923e945626c59804e9e",
+"1a1c8774df44c604de76c9c7eab23623",
+"65114ba9d8815c0ed9544426d69348d7",
+"a44edd58df769906e9f4fd0b0afba1bd",
+"ba0a58a163c82e64ea74dd07ab74059d",
+"4e603f507ef3d00c69298a66def62c77",
+"a4bcda645ae1ff47b3cb4434adc6e865",
+"f9bcf20ea50a39ea8d0d44fa3194ebd0",
+"f82cc66f68806dd8cbd6d6ecbdbe8c23",
+"645a0c7bdbf10ee71a6362a198ecf721",
+"c76ada999c3230219f86ded4a3a33619",
+"e9e1f398370ac5d40107ee08fbc31b57",
+"499a496ba8761ec33e49d4a62e15b722",
+"a8aadfa72caa0b40ba7da5a753191e4d",
+"d4ddba38a8c8257fb03eb08219eb7cf3",
+"37035c8f6eb1131618711dbd9d5a4a2a",
+"1d39c047150ad472bdb6e96248957bed",
+"8085e866cfc25e21d8b38bac90561491",
+"8a60728efe53851f9bfa7666406db09d",
+"ab140668d62ec22b7a50a1c70bdd2928",
+"98a8dd549000f83737df7a9699f77e30",
+"ca7e2ce06e40ca561e45ca13902c406c",
+"23b9504e20c3c8bf14213f72442fbc49",
+"5d62aa673d986d1c50213ab47b1d5d1c",
+"b68d54c69bcb577d34d60951353b2bb2",
+"72a54c735786fa63c659c4ef69bc004b",
+"bf7e053207ffe45bf1000f9b55137130",
+"06ddc7d6d9f39d4ca1f0ce12176c928d",
+"04206ad85307b56dcc56b77830861371",
+"4f630adfcdd29ab85d0807ee0848393c",
+"27c8cf799d0193e9e09e79ebe3202530",
+"b8925c2ed46c63af07374c7f84d8c7ba",
+"f33ab857aa4c892a1eccc12c5a743eda",
+"5e93bcfd1fb7319e26e5b9c3c4a79f8e",
+"f3bfb24745bd2cb96f37fccf91aacfa3",
+"559b0126115c60cc597ee41d089d04dd",
+"64bcd4312548893e5d3d0f23af999273",
+"fa6104a124e47acfad835171b8cacf2e",
+"a4b25e1d9333c23955fbd189c6ff3067",
+"380f5d1621c2d502b3eb9fe586555c46",
+"74197a969bd41f6c14de46e6243851d2",
+"23f2eeda3f4aeb03edcd8a11bb3fa688",
+"1bac1f856c40999ee952fd2de1f5ac79",
+"103b683b830694afad7b41e230e17bc7",
+"91a452d9bedb6780adf5deaf4c0f2364",
+"4aab05688d7b55a4b46599fa22a44a0a",
+"b325e34526a05d9c8ce9d60a95ab2126",
+"b80416df63e4410dd586e476f53d715a",
+"344653ff77b7e60ca42263dc057461cb",
+"892b5c92655fb7b759c307b8c2683339",
+"215933cb634ab1b561f790724be8e1a2",
+"9489ce5333fb3f155565ada77f18f7f5",
+"5cae7b0891751bc81749e0dc54ab8c01",
+"90246fd988ef6e87f270528b4c369968",
+"a2c18a38a1724f0b287ed7526c947f14",
+"344cd581c7d3efe67932d18801cf8588",
+"c08bfb52589f5411a0843a9688fc7abc",
+"5007e009cfa1a5e625663a18d8f40431",
+"91ffd127fd2fa33c5ed72f2d517d946a",
+"477aab6c84cfafaa54e5db8fd94c9acb",
+"b9a02216e90b755aae8b1f7c712d34a7",
+"49d906aa28c845aaac56f63f873fa126",
+"96830fcc1310c2e66e9f736af987f996",
+"a2b9a6893a69f60b6acc3421a9826834",
+"e41c9aa47e6e5462428fed3fa25df671",
+"9548201b37bf429235b32658b86e3f67",
+"7cd30baa3af7ce467a23524d582eb5d9",
+"e3924864fd1b26149b81a5717966ee0d",
+"7580140f6bb491ef38630bbf1dac9fcb",
+"1affb7f4182a9cc285317a6e92819eec",
+"801be1d9fc411599ab1f3835c25a2422",
+"b50d3ff87ff8c8fd7732dbe8f0b6f97a",
+"b97cf6fc263ec4df8b372294f93efbeb",
+"3a1bc1e5c55f0b32d888e58a41f44787",
+"f11ae26c66fd30ad7706d2a44860c9a9",
+"945e86d93c18b2cc1cd5b84698582035",
+"d120c01650f75e02bd3000ebc0fba492",
+"129ab8ea86f479b610276f044c609055",
+"4b40cbe9b32fbd726588f28b66ef7fc3",
+"1d05210aa05a3b9a24507af57228b361",
+"a11e69030928b33f7a661106b6f9e9fd",
+"eb1ec79dc567ef715f971137ef084a38",
+"581dfb060d5c8fe1e88ee0ed8d7fb257",
+"896fba5eb1580f5a70e8a2b3a2c8e1be",
+"9377706c1b4fae13e8070fcba23ac802",
+"f9dd36f9358640ade5cc63ecb7a0ae21",
+"1889218ee7419e0b45a658ae6f17521a",
+"19a2bfc23737dcda370f39b3c5ccebdd",
+"7395864cf1d8106d18e8f2bb957dde91",
+"9f8ba50aa87a3f890e9d224ec375cef4",
+"195848f1741dfee692159fb1b97a016e",
+"b0aef5411ca526ba10fcf87cdf6ee8bd",
+"a79220c0b8bf87dc9d5b97178716f7e3",
+"79e96abfe7a0d4f534e97edfc01cc4a3",
+"4a5d7f4a29546cb1898a23bdf703f997",
+"860d3ad596fa6dd678635fc909a1dbf9",
+"ec803c1c701be5b47f8a73f2868a4125",
+"7e539cd69241fe51c57e4820a074e89b",
+"c911bbd4905632553bf5544554d77264",
+"5c7e4c98172f52998051abdddf3e5fe2",
+"381d331ad48045db102b72d03e6c9156",
+"5d9a97683f05e61def8893503056340d",
+"74aa933b230f41f354a31b371383915d",
+"ede213e0804a847c0cb57e4f8561f8b3",
+"957954ecef6c354df77550cf4b92ce7a",
+"65b71017754a828a709e841070430970",
+"c4d45dca3bec04abb7693703f1c06e80",
+"b891b9058636acaa1c8c96311e1d128d",
+"0f28137af547fc8353ad5758bf317404",
+"42e8902b86fcc7a7985819ec062eda46",
+"67c8ea8058d8b490f9408ce50fd48324",
+"21b084fb0e9eae5618d7b1789183b14f",
+"df498b5f700a30107e6dfb6626d9f042",
+"11fb81a5f80b7da2969fb745dac9125c",
+"2640424cba40ab39cf811a8031cb812d",
+"a4aa2be8ca807c9ba2baec770b2880df",
+"ea3d1b6bf7bcb85a45892152d6b1f48e",
+"73e8fb45d792302db2ac0da7bbc47335",
+"c5f213fba5b158bdbb3ef529fc1546a1",
+"555f156a86df3c672a47aa4aeff076bd",
+"9c5dbfad8f986d8c0f59413a172382dd",
+"76584ffdfff72b970b0e9c34d0df64e7",
+"0be3d7cbbfc1a8c1b3bdc5ec9a1a9ee7",
+"639ba4cbb9ea24235b07cbc45503d451",
+"511c83c65101792481132c9caa93ebb1",
+"0b537c58348ba744b77dccbabc7469d0",
+"7612fc69eceaeaa9b3502ca2b803b27f",
+"4695507dabd596b3f365c7767d3a0dd5",
+"f56cdeef51215cc172c543c57f55c3ef",
+"1a2c16d6f75e5ba29b71fa8c3a9c0fff",
+"e1b20b4c963706b6f854f81caa95e0d8",
+"1e4759c950d26175c58c16611ec6af9f",
+"5d65a3c354310eb1a2273b9df33214f6",
+"5a787401d87d787d2f27f327b4c8265c",
+"754ade491f1cdfe358f5e235cfbb4d56",
+"ae5da910193f157feaaed711d68c3a51",
+"a28ed765409682c497684131709007e2",
+"de064548dcd69fc01e574d99547ce88d",
+"2382ac3bf7fc029476a464f1b1fc1146",
+"4dbde35058a4f1492df889f870661c5a",
+"af26ef9021476e6e5617a7772d5c1624",
+"70e57dbd248bac83d76bb378def0b95f",
+"3945385a73974538de83ff61476ceaae",
+"d410dd097c7c29b60e1a21a7ce7fcfd2",
+"4b606a9ec05a3ebb94bca6201ecc4d6c",
+"c00d39add0d2bdee1d3a97a6da85793e",
+"1ed78d604a74260611bc5bb362f9c2ef",
+"3b68224b6981a79dde20c978f7c409b0",
+"83c776bebcb17a9f5b1ef88cd75c04ee",
+"437c8a4cf32d160abe87162728861cb3",
+"283b52f261e4a990c0f0858b8cfb6bf0",
+"0c40636f1bfdcd7cd20e5644c325f969",
+"182d82b408417d750d2164895b5db4d2",
+"51affa2b6cd803fe11815a9712cbe24e",
+"41c7d42359ac7f19e9a37ffc8be933c9",
+"3b93a77f40ad74a8dbc3c89730d22e47",
+"07faf5686d6ae395c0ee9182b1a3bf92",
+"6cf9a23c5bd25fda4be52dcfb25a56fb",
+"3db279c5d7cb08c1125064a3ee5b26fd",
+"12329b69f3fcb82cf3b6445791662894",
+"4089c8a4ae5a9dd958b2d44fdac294d9",
+"d5c8beeb659dfff964327d74acd4201a",
+"3c4adcfa5bb49d9a91fcd3546cb307aa",
+"2205986bd3d1a09fb4b452eb91590eb4",
+"a4b486e9ce5720647e52fac60de14658",
+"49a86ec93098bd789046028e782e551a",
+"9c9aaa9a17f2606eefb2167ee2f488ce",
+"aa4c4c22ed6c4f8831e6915916a92f37",
+"7d441987d7b2768ddc6a8229fef2f39e",
+"600d8cffd03cd4220960be1ef2f50f03",
+"1e9b8a5e52528a2b47032c6a35eefee6",
+"e3fde2a5e2e670430b3845e853efae00",
+"7bc8e1d8b3df42b05be9f4f09c553a29",
+"110b9acd30f4194902765dcc0e8c9abd",
+"d0c99e534b5f2dfb2aeaa24903986d0f",
+"c735c342a17b247ee6e2ebc1ba6cf94c",
+"295ef19136fee182c7680948c34370b3",
+"d42614452df78ab55b5e8fec91664360",
+"9988c29a4843b7e637d80f6a851b2785",
+"f7b3f28cdc7df2ea2ecf019d71220842",
+"1d8a582cb5e56a1814c7915036f1b051",
+"ce1c4d5e3b442f4995ebd85cb5ca24ad",
+"365c5c74ce9d730a9124381ab0c12d89",
+"3d44e5e23d36e8f5e22a2f5a3f54ec05",
+"4fa4080550bdf355a84f3fbaf14510ce",
+"581f9bf9aaef6e65d7450e7580ba7e32",
+"09dda4c641762f7a85761ebb8d2772d3",
+"06d643eed789836f2c5ef654c74ac087",
+"d507e79760d057083c76846c0e82201c",
+"79210b0277df2cb5f7f6af30cce3c340",
+"931eb6959f16b9b58726f5c23c8001af",
+"308c42bf14b6db203556aebd419ff578",
+"f34b606f14a09649ee393a7a8919c5cd",
+"25d6ed3abf4abd2eb31e5a17262a9ee1",
+"99ab84ee642730d6a77a97fa938e2eb9",
+"355331dc09da0753045e48390604c8d4",
+"1005cba9e917aa3fe3f332e1101a2634",
+"2dfe9b013f3f83297aac4e6a16718060",
+"a244776fcfb0b82c5d9213f53424a420",
+"2906810a3ca221ddff9a36f08a9dfc23",
+"7a16dc58abdd6d96f0e2be864333a0ea",
+"3d284825c52c809a6f7299f3489c7ef1",
+"a3a6e7d1bd0ef24a1e65e3735aba60c3",
+"0af1754a5b48f1cdad4d28e0492ab62d",
+"74aed97ae3965743bf3ea3df7bcfdf31",
+"2446ab9bfba1b2fbac77440badd4924d",
+"54e3b264641c19d2b8699531f983736b",
+"f4e45f925389d0212be9afc2332c58ad",
+"d893ba2bf8e49287cde0cb9a7c7af2f7",
+"aa513b4e7e1078f6578bc1df2e53f823",
+"64ca5a63f409707e48495314863bedb8",
+"a98392dd3ffd98a30e0d9aac9ebba90b",
+"0831f7e1ce0a4beace412cc4463bca83",
+"eb71ede953dda7fe9ea40d4f0d5fb541",
+"febd2f53befbaafbea8ec343131fee24",
+"52e699003680b47e5045c86d47c6da3f",
+"241a03fc9d1c24e2698f05cc0fab71b8",
+"9501b2c2098f24bc48248d02333fd3ac",
+"4ad5a27bfade249a2f1cf406069d3eec",
+"45aa99a52eaa7978086a4a50d90dc2fa",
+"d681a26651c5a88c67638a13b19efe87",
+"6597c0012c3f20640036b44c60ab0dd0",
+"de75649315e0767dedf8dfd923109eb2",
+"111b86ecc4c2db41b8ca224286cad448",
+"b5e0e29e06fb46fc615d96429a8cab49",
+"9c4811d7a5d360eb6c265b9a8eeb862f",
+"b817e77d885f793eda8b3a0be219c34c",
+"8a2a9aa9768977ad9431b7c94e7d3fea",
+"f366c2f3c7c1e657f27d87e928566ce4",
+"e46e23a48538aede8073ec7d9ab33c98",
+"840ef35901a7b1e5b712eb56ececa27b",
+"e7041e384d5e589614d8a34683734ec7",
+"df23a43f2e9d33925afaff12800688bf",
+"86d879575964e807dfabf7927b6ae3fc",
+"2b5a16b56bbc4ad578609b33567bcc34",
+"8e66e35f3788166dc08c0fc8e4ce40e1",
+"018344c95c93116e8b79e849832b6ae0",
+"a1b43a739101fc25b620616c21eaaa74",
+"5658dfe575d047ba324e0a43d5464345",
+"2f3e605b1f18edfc2b5d4046569ba534",
+"9a598fdca7c8ecd24776a1a454bf06f5",
+"0443de4516ba4a2e87d4ca5b4dff92aa",
+"652d397f2fdabd8206b39761e28cad44",
+"90122c216379e4ef8e6405a730bcce6c",
+"8e499208e44abcee9d8b795188f957d5",
+"8444c58def73f911ece8eb2725c01090",
+"c219dbc66b941e3438881144f49133fa",
+"106416326d70412f449b336050fae296",
+"7fdb671d6c75e7290456853fac8d33fa",
+"15258dbc93967d61deb7880ae90f5213",
+"9edf5c3fc09fbd5de6bb3455c6186336",
+"421aa0a8f149d5683d23abd25ee9187f",
+"61798888aaa4b59b15d1eb9b0d08ff80",
+"d2fd017a7671323c4cd201eec0096d7b",
+"925f65938d86089d4bfef4655a8d6b54",
+"925f65938d86089d4bfef4655a8d6b54",
+"a9271ee99dd31bac1ab7dd73a4ecee22",
+"cc815332b006e4e2c35e085cbd277e82",
+"7bc69fe7028d74dfe5dc073384c55c45",
+"bda77b6bafdfc57234a35012ce1f3966",
+"89647b2903f51ec3aab57b90885c994a",
+"e9f282d3dfcc3baf9157a800fdcacfdb",
+"d92bcd4805d95c3d52ecae6981355e7c",
+"4bd6b1520c5fd182b92e78faa6b9ed1b",
+"b931596557c4ba4f388594658008a3f0",
+"49aa32980bae6fba043bd998c6acf9a9",
+"b046ae4e48cff2ca8f5abef4b1806d49",
+"b0634a379770e80a45c3f0b8dbec22db",
+"aea017f929b26d5b5989fc27d0da2fa0",
+"9a0d841a749a7a54102224ab3cd6c163",
+"f72d8d1bd6d72e5618ba95fa19c74fca",
+"c35f5083159d2162b92cca22b4db9fc3",
+"7f1e572117cb40778960654b8b6db032",
+"8784552adac79296d919afbb30b0a545",
+"872c4ba9d11e640eedf1c58406914108",
+"33c238dd53df7f72a58f75c79a2d0970",
+"490297a33265c67f7f3179b66820604f",
+"cb10d168dc78c64ae84e230306e50fe2",
+"0ff361a1b87228a68fe2fb515facf44a",
+"9fd80f31f3fd58b503a6893ee54d6b48",
+"e1edb928949f2ead1c53c649292e124b",
+"e3646cb1ecb082a592e29be130d7fad7",
+"d5944509e4746837b296fe7a10b58f14",
+"b626d50f1174ba1d3c92d0f065f2649b",
+"7215806c939506b13049bcaa31f16d0b",
+"f981a6b7cb2aee8d444af9caf25bba83",
+"afcf6952345b098402ad6d85c8ffd9c2",
+"f2c2b7fe09ca8296d8ed79e6338271cd",
+"0e066da9fb73bbbc1d107b8fccde2985" ];
+      }
+
+      function onFirstFrameRendered()
+      {
+          //console.log("First frame rendered!");
+      }
+
+      function onGameSetWindowSize(width,height)
+      {
+          console.log("Window size set to width: " + width + ", height: " + height);
+
+          startingHeight = height;
+          startingWidth = width;
+          startingAspect = startingWidth / startingHeight;
+      }
+
+    function triggerAd(adId, _callback_beforeAd, _callback_afterAd, _callback_adDismissed, _callback_adViewed, _callback_adbreakDone) {
+       // need to take a copy of the RValues represented
+       var pRValueCopy = triggerAdPrefix( _callback_beforeAd, _callback_afterAd, _callback_adDismissed, _callback_adViewed, _callback_adbreakDone );
+       var pCallbackBeforeAd = pRValueCopy + (0*16);
+       var pCallbackAfterAd = pRValueCopy + (1*16);
+       var pCallbackAdDismissed = pRValueCopy + (2*16);
+       var pCallbackAdViewed = pRValueCopy + (3*16);
+       var pCallbackAdBreakDone = pRValueCopy + (4*16);
+
+       adBreak({
+         "type": "reward",                    // The type of this placement
+         "name": adId,                        // A descriptive name for this placement
+
+         "beforeAd": () => {                  // Prepare for the ad. Mute and pause the game flow
+           console.log("beforeAd");
+           // trigger _callback_beforeAd to game
+           doGMLCallback( pCallbackBeforeAd, { id:adId } );
+         },
+         "afterAd" : () => {                   // Resume the game and re-enable sound
+           console.log("afterAd");
+           // trigger _callback_afterAd to game
+           doGMLCallback( pCallbackAfterAd, { id:adId } );
+         },
+         "beforeReward": (showAdFn) => {      // Show reward prompt (call showAdFn() if clicked)
+           console.log("beforeReward");
+           showAdFn();
+           // Setup native prompt to indicate ad will load
+           // Will not be setup by dev so this UX controlled by GXC
+         },
+         "adDismissed": () => {               // Player dismissed the ad before it finished
+           console.log("adDismissed");
+           // trigger _callback_adDismissed to game
+           doGMLCallback( pCallbackAdDismissed, { id:adId } );
+         },
+         "adViewed": () => {                  // Player watched the ad–give them the reward.
+           console.log("adViewed");
+           // trigger _callback_adViewed to game
+           doGMLCallback( pCallbackAdViewed, { id:adId } );
+         },
+         "adBreakDone": (placementInfo) => {  // Always called (if provided) even if an ad didn't show
+           console.log("adBreakDone");
+           // trigger _callback_adBreakDone to game
+           doGMLCallback( pCallbackAdBreakDone, { id:adId } );
+           triggerAdPostfix( pRValueCopy );
+         }, 
+       });
+      }
+
+      function triggerPayment(itemId, _callback_PaymentComplete) {
+        var pRValueCopy = triggerPaymentPrefix(_callback_PaymentComplete);
+        setTimeout(() => {
+          console.log("triggerPayment");
+          doGMLCallback(pRValueCopy, { id:itemId });        
+        }, 1000);
+        triggerPaymentPostfix();
+      }
+
+      function ensureAspectRatio() {
+        if (canvasElement === undefined) {
+          return;
+        }
+
+        if (!CHANGE_ASPECT_RATIO) {
+          return;
+        }
+        
+        if (startingHeight === undefined && startingWidth === undefined) {
+          return;
+        }
+
+        canvasElement.classList.add("active");
+
+        const maxWidth = window.innerWidth;
+        const maxHeight = window.innerHeight;
+        var newHeight, newWidth;
+
+        // Find the limiting dimension.
+        var heightQuotient = startingHeight / maxHeight;
+        var widthQuotient = startingWidth / maxWidth;
+
+        if (heightQuotient > widthQuotient) {
+          // Max out on height.
+          newHeight = maxHeight;
+          newWidth = newHeight * startingAspect;
+        } else {
+          // Max out on width.
+          newWidth = maxWidth;
+          newHeight = newWidth / startingAspect;
+        }
+
+        canvasElement.style.height = newHeight + "px";
+        canvasElement.style.width = newWidth + "px";
+      }
+
+      function pause() { // Don't change the name - GX Mobile calls it when the app becomes inactive.
+        if (!canvasElement.classList.contains("active")) { // Wait for the canvas to load.
+          return
+        }
+        
+        GM_pause();
+        pauseMenu.hidden = false;
+        canvasElement.classList.add("paused");
+      }
+
+      function resume() {
+        GM_unpause();
+        pauseMenu.hidden = true;
+        canvasElement.classList.remove("paused");
+        canvasElement.classList.add("unpaused");
+        enterFullscreenIfSupported();
+        lockOrientationIfSupported();
+      }
+
+      function quitIfSupported() {
+        if (window.oprt && window.oprt.closeTab) { /* GX Mobile API */
+          window.oprt.closeTab();
+        } else if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
+          window.chrome.runtime.sendMessage('mpojjmidmnpcpopbebmecmjdkdbgdeke', { command: 'closeTab' })
+        }
+      }
+
+      function enterFullscreenIfSupported() {
+        if (!window.oprt || !window.oprt.enterFullscreen) { /* GX Mobile API */
+          return;
+        }
+
+        window.oprt.enterFullscreen();
+        let viewStatus = GM_get_view_status();
+        viewStatus.fullscreen = true;
+        GM_set_view_status(viewStatus);
+      }
+
+      function lockOrientationIfSupported() {
+        if (!window.oprt || !window.oprt.lockPortraitOrientation || !window.oprt.lockLandscapeOrientation) { /* GX Mobile API */
+          return;
+        }
+
+        let viewStatus = GM_get_view_status();
+        if (viewStatus.landscape === true && viewStatus.portrait === false) {
+          window.oprt.lockPortraitOrientation();
+        } else if (viewStatus.landscape === false && viewStatus.portrait === true) {
+          window.oprt.lockPortraitOrientation();
+        }
+      }
+
+      /* Observe the dimensions of body and ensureAspectRatio of the canvas (whilst taking up maximum space)
+       *
+       * NOTE(robertz):
+       *  We also need to request an Animation Frame to do this, if we do not, resizeObserver might throw error
+       *  "ResizeObserver loop limit exceeded", which means that
+       *  "[...] ResizeObserver was not able to deliver all observations within a single animation frame"
+       *  https://stackoverflow.com/a/50387233 (source).
+       *
+       *  There are different ways to solve the issue, since the error is benign (meaning it wont crash anything)
+       *  we could choose to ignore it via changing the window.onerror method, i.e
+       *  ```
+       *  window.onerror((event)=> {
+       *    if(event==="ResizeObserver loop limit exceeded") {
+       *       return
+       *    }
+       *     ///...rest
+       *  }
+       *  ```
+       *  But for now we request an animationFrame which seems to be the recommended way to go about it.
+       *
+       * NOTE(ddrechny):
+       *  window.innerWidth/Height value updates are sometimes delayed in WebKit on iOS after an orientation
+       *  change. Hence we're calling ensureAspectRatio one more time after a delay to minimize the risk of
+       *  sizing the canvas with outdated values.
+       */
+      const resizeObserver = new ResizeObserver(() => {
+        window.requestAnimationFrame(ensureAspectRatio);
+        setTimeout(() => window.requestAnimationFrame(ensureAspectRatio), 100);
+      });
+      resizeObserver.observe(document.body);
+
+      /* NOTE(ddrechny):
+       *  Body needs to be scrollable on desktop browsers for debug buttons to be accessible.
+       *  On mobile browsers scrolling can be activated accidentally and debug buttons aren't useful,
+       *  so it's better to disable it.
+       */
+      if (/Android|iPhone|iPod/i.test(navigator.userAgent)) {
+        bodyElement.className = "scrollingDisabled";
+        canvasElement.classList.add("animatedSizeTransitions");
+        outputContainerElement.hidden = true;
+      }
+
+      document.addEventListener("visibilitychange", (event) => {
+        if (document.visibilityState != "visible") {
+          pause();
+        } else if (isMultiplayer()) {
+          resume();
+        }
+      });
+
+      window.addEventListener("load", (event) => {
+        if ((!window.oprt || !window.oprt.enterFullscreen) && (!window.chrome || !window.chrome.runtime || !window.chrome.runtime.sendMessage)) {
+          quitButton.hidden = true;
+        }
+      });
+
+      setWadLoadCallback(() => {
+        enterFullscreenIfSupported();
+        lockOrientationIfSupported();
+      });
+
+      var read_ptr = 0;
+      read_int = () => {
+        var heap_slice = Module["HEAPU8"].subarray(read_ptr, read_ptr + 4);
+        var buffer = new ArrayBuffer(4);
+        var barray = new Uint8Array(buffer);
+        for (var i = 0; i < 4; i++) barray[i] = heap_slice[i];
+        var int_array = new Int32Array(buffer);
+        var int = int_array[0];
+        read_ptr += 4;
+        return int;
+      };
+
+      read_pointer = () => {
+        var ptr = Module.getValue(read_ptr, "*");
+        read_ptr += 8;
+        return ptr;
+      };
+
+      readPeer = () => {
+        var peer = {
+          peer: read_int(),
+          local_frames_ahead: read_int(),
+          rtt: read_int(),
+          remote_frame_rate: read_int(),
+          remote_frame_delay: read_int(),
+        }
+
+        return peer;
+      }
+
+      readStats = (s) => {
+        read_ptr = s;
+
+        var stats = {
+          kbps_sent: read_int(),
+          kbps_received: read_int(),
+          pps_sent: read_int(),
+          pps_received: read_int(),
+          frame_rate: read_int(),
+          rollbacks: read_int(),
+          frame_delay: read_int(),
+          skipped_frames: read_int(),
+          rejected_inputs: read_int(),
+          relay_rtt: read_int(),
+          peer: read_int(),
+          num_peers: read_int(),
+
+          serialization_stats: {
+            state_size: read_int(),
+            managed_instances_num: read_int()
+          },
+          peers: []
+        }
+
+        read_ptr = read_pointer();
+        for (var j = 0; j < stats.num_peers; ++j) {
+          stats.peers.push(readPeer());
+        }
+
+        return stats;
+
+      }
+
+      var acceptable_rollback_frames = 0;
+      var set_acceptable_rollback = (frames) => {
+        acceptable_rollback_frames = frames;
+      }
+
+      drawLocal = (peers_elem, frame_delay_elem, relay_rtt_elem, peer_name, relay_rtt, frame_delay) => {
+          drawPeer(peers_elem, frame_delay_elem, peer_name, 0, frame_delay, 0);
+
+          const per_pixel = 100/16;
+          const frames_rtt = relay_rtt/16; // To ceil, or not to ceil - that's the question.
+
+          const y = 100 - frames_rtt * per_pixel;
+
+          const relay_rtt_marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          relay_rtt_marker.setAttribute('x1', -2);
+          relay_rtt_marker.setAttribute('y1', y);
+          relay_rtt_marker.setAttribute('x2', 2);
+          relay_rtt_marker.setAttribute('y2', y);
+
+          relay_rtt_marker.setAttribute('data-relay-rtt', relay_rtt);
+
+          relay_rtt_marker.classList.add(peer_name);
+          relay_rtt_marker.classList.add('relay-rtt');
+
+          relay_rtt_elem.appendChild(relay_rtt_marker);
+      }
+
+      drawPeer = (peers_elem, frame_delay_elem, peer_name, rtt, frame_delay, frames_ahead) => {
+        const per_pixel = 100/16;
+        const frames_rtt = rtt/16; // To ceil, or not to ceil - that's the question.
+        const x = 50 + frames_ahead * per_pixel;
+        const y = 100 - frames_rtt * per_pixel;
+
+        const peer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        peer.setAttribute('cx', x);
+        peer.setAttribute('cy', y);
+        peer.setAttribute('r', 1);
+
+        peer.setAttribute('data-rtt', rtt);
+        peer.setAttribute('data-frame-delay', frame_delay);
+        peer.setAttribute('data-frames-ahead', frames_ahead);
+
+        peer.classList.add(peer_name);
+        peer.classList.add('peer');
+
+        peers_elem.appendChild(peer);
+
+        const peer_frame_delay = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        peer_frame_delay.setAttribute('cx', x);
+        peer_frame_delay.setAttribute('cy', y);
+        peer_frame_delay.setAttribute('r', frame_delay * per_pixel);
+
+        peer_frame_delay.classList.add(peer_name);
+        peer_frame_delay.classList.add('peer-frame-delay');
+
+        frame_delay_elem.appendChild(peer_frame_delay);
+
+        if (acceptable_rollback_frames > 0) {
+          const peer_acceptable_rollback = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          peer_acceptable_rollback.setAttribute('cx', x);
+          peer_acceptable_rollback.setAttribute('cy', y);
+          peer_acceptable_rollback.setAttribute('r', (frame_delay + acceptable_rollback_frames) * per_pixel);
+
+          peer_acceptable_rollback.classList.add(peer_name);
+          peer_acceptable_rollback.classList.add('peer-acceptable-rollback');
+          frame_delay_elem.appendChild(peer_acceptable_rollback);
+        }
+      }
+
+      report_stats = (stats_data) => {
+
+        var stats = readStats(stats_data);
+
+        var peers_elem = document.getElementById("stats-network-peers");
+        var frame_delay_elem = document.getElementById("stats-network-peer-frame-delays");
+        var relay_rtt_elem = document.getElementById("stats-network-relay-rtt");
+
+        peers_elem.innerHTML = '';
+        frame_delay_elem.innerHTML = '';
+        relay_rtt_elem.innerHTML = '';
+
+        stats.peers.forEach(p => {
+          drawPeer(peers_elem, frame_delay_elem, 'peer' + p.peer, p.rtt, p.remote_frame_delay, p.local_frames_ahead);
+        });
+
+        drawLocal(peers_elem, frame_delay_elem, relay_rtt_elem, 'peer' + stats.peer, stats.relay_rtt, stats.frame_delay);
+      }
+
+      let wallpaperConfig = {};
+      const wallpaperConfigKey = 'wallpaper-config';
+
+      function wallpaper_init_config_controls(definitions) {
+        const wallpaperContainer = document.getElementById("wallpaper-container");
+        wallpaperContainer.style.display = "block";
+
+        let configStyle = '<style type="text/css">' +
+          'body { color: white; font-family: Averta, -apple-system, "Segoe UI", system-ui, sans-serif; font-style: normal; font-size: 10px; }' +
+          '.config-row { display: flex; justify-content: flex-start; align-items: center; padding: .5em; }' +
+          '.config-row > label { flex: 1 }' +
+          '.config-row > input { flex: initial; }' +
+          '.config-row > textarea { flex: 1; }' +
+          '.config-row-label { font-size: 12px; font-weight: 600; }' +
+          'button { padding: 8px 16px; border-radius: 4px; background-color: unset; border-color: rgb(199, 159, 234); color: rgb(199, 159, 234); }' +
+          '</style>';
+        let configHTML = '<html><head><title></title>' + configStyle + '</head><body>' +
+          '<div class="wallpaper-header"><h1>Live Wallpaper Configurator</h1><button id="wallpaper-reset-parameters">Reset parameters</button></div>' +
+          '<div class="wallpaper-config" id="wallpaper-config"></div>' +
+          '</body></html>'
+
+        const wallpaperConfigDocument = document.getElementById("wallpaper-config-iframe").contentDocument;
+        wallpaperConfigDocument.open();
+        wallpaperConfigDocument.write(configHTML);
+        wallpaperConfigDocument.close();
+
+        const storedConfig = JSON.parse(localStorage.getItem(wallpaperConfigKey));
+        if (storedConfig) {
+          wallpaperConfig = storedConfig;
+        }
+
+        const configElement = wallpaperConfigDocument.getElementById("wallpaper-config");
+        const resetButton = wallpaperConfigDocument.getElementById("wallpaper-reset-parameters");
+        resetButton.addEventListener("click", (e) => {
+          wallpaper_reset_config();
+          wallpaperConfig = {};
+          add_config_elems(configElement, definitions);
+          notify_config_change();
+        }, false);
+
+        add_config_elems(configElement, definitions);
+        notify_config_change();
+      }
+
+      function add_config_elems(configElement, definitions) {
+        while (configElement.hasChildNodes()) {
+          configElement.removeChild(configElement.lastChild);
+        }
+
+        definitions.value
+          .map(d => create_elems(d, wallpaperConfig, ""))
+          .filter(e => e !== null && e !== undefined)
+          .map(e => configElement.appendChild(e));
+      }
+
+      function create_elems(definition, config, prefixId) {
+          if (definition.type === undefined || definition.name === undefined) {
+            console.log("missing definition name or type for: ", definition);
+            return null;
+          }
+
+          if  (definition.type === "section") {
+            return create_section_elem(definition, config, prefixId);
+          }
+
+
+          if (definition.value === undefined ) {
+            console.log("missing definition value for: ", definition);
+            return null;
+          }
+
+          if (definition.type === "range") {
+            return create_range_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "boolean") {
+            return create_checkbox_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "color" || definition.type === "colour") {
+            return create_color_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "string") {
+            return create_text_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "string_multiline") {
+            return create_multiline_text_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "select") {
+            return create_select_elem(definition, config, prefixId);
+          }
+
+          if (definition.type === "file" || definition.type === "folder") {
+            return create_not_supported_elem(definition, config);
+          }
+          
+          console.log("missing config value for: ", definition);
+          return null;
+      }
+
+      function create_section_elem(definition, config, prefixId) {
+        const divElem = document.createElement("div");
+
+        const headerElem = document.createElement("h2");
+        headerElem.innerHTML = definition.label;
+
+        divElem.appendChild(headerElem);
+
+        const sectionId = prefixId + definition.name + "-"
+        if (!config[definition.name]) {
+          config[definition.name] = {};
+        }
+
+        definition.children
+          .map(c => create_elems(c, config[definition.name], sectionId))
+          .filter(e => e !== null && e !== undefined)
+          .map(e => divElem.appendChild(e));
+
+        return divElem;
+      }
+
+      function get_initial_value(definition, config) {
+        let value =  definition.value;
+        const configValue = config[definition.name];
+        if (configValue && (typeof(configValue) === typeof(value))) {
+          value = configValue;
+        }
+
+        return value;
+      }
+
+      function wrap_with_label(inputElem, definition, prefixId) {
+        const controlElem = document.createElement("div");
+        controlElem.classList.add(definition.name + "-control");
+        controlElem.classList.add("config-row");
+
+        const labelElem = document.createElement("label");
+        labelElem.htmlFor = prefixId + definition.name;
+        labelElem.innerHTML = "<span class='config-row-label'>" + (definition.label || definition.name) + "</span>";
+        if (definition.description) {
+          labelElem.innerHTML += "<p>" + definition.description + "</p>";
+        }
+        controlElem.appendChild(labelElem);
+
+        inputElem.id = prefixId + definition.name;
+        controlElem.appendChild(inputElem);
+
+        return controlElem;
+      }
+
+      function create_range_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const valueElem = document.createElement("span");
+        valueElem.style = "margin: 0.5em";
+        valueElem.innerHTML = "(" + value + ")";
+
+        const stepElem = document.createElement("input");
+        stepElem.id = prefixId + definition.name;
+        stepElem.type = "range";
+        stepElem.min = definition.min || 0;
+        stepElem.max = definition.max || 100;
+        stepElem.step = definition.step || 1;
+        stepElem.value = value;
+
+        config[definition.name] = value;
+        function range_value_updated(e) {
+          const valueUpdate = Number(e.target.value);
+          config[definition.name] = valueUpdate;
+          valueElem.innerHTML = "(" + valueUpdate + ")";
+
+          notify_config_change();
+        }
+
+        stepElem.addEventListener("change", range_value_updated, false);
+        stepElem.addEventListener("input", range_value_updated, false);
+
+        const valueWrapper = document.createElement("span");
+        valueWrapper.appendChild(valueElem);
+        valueWrapper.appendChild(stepElem);
+
+        return wrap_with_label(valueWrapper, definition, prefixId);
+      }
+
+      function create_checkbox_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const checkboxElem = document.createElement("input");
+        checkboxElem.type = "checkbox";
+        checkboxElem.checked = value;
+        
+        config[definition.name] = value;
+        checkboxElem.addEventListener("change", (e) => {
+          const valueUpdate = Boolean(e.target.checked);
+          config[definition.name] = valueUpdate;
+          notify_config_change();
+        });
+
+        return wrap_with_label(checkboxElem, definition, prefixId);
+      }
+
+      function create_color_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const bgrColor = value;
+        const r = (bgrColor & 0x0000ff);
+        const g = (bgrColor & 0x00ff00) >> 8;
+        const b = (bgrColor & 0xff0000) >> 16;
+        const rgbColor = (r << 16) + (g << 8) + b;
+        const color = "#" + rgbColor.toString(16).padStart(6, '0');
+
+        const colorElem = document.createElement("input");
+        colorElem.type = "color";
+        colorElem.value = color;
+
+        config[definition.name] = value;
+        function color_value_updated(e) {
+          const color = e.target.value;
+          const rgbColor = parseInt(color.slice(1), 16);
+          const r = (rgbColor & 0xff0000) >> 16;
+          const g = (rgbColor & 0x00ff00) >> 8;
+          const b = (rgbColor & 0x0000ff);
+          const bgrColor = (b << 16) + (g << 8) + r;
+
+          config[definition.name] = bgrColor;
+          notify_config_change();
+        }
+
+        colorElem.addEventListener("change", color_value_updated, false);
+        colorElem.addEventListener("input", color_value_updated, false);
+        
+        return wrap_with_label(colorElem, definition, prefixId);
+      }
+
+      function create_text_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const textElem = document.createElement("input");
+        textElem.type = "text";
+        textElem.value = value;
+        console.log("text", value)
+        if (definition.max_length && definition.max_length > 0) {
+          textElem.maxLength = definition.max_length;
+        }
+
+        config[definition.name] = value;
+        textElem.addEventListener("input", (e) => {
+          config[definition.name] = e.target.value;
+          notify_config_change();
+        });
+        
+        return wrap_with_label(textElem, definition, prefixId);
+      }
+
+      function create_multiline_text_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const textareaElem = document.createElement("textarea");
+        textareaElem.rows = 5;
+        textareaElem.cols = 50;
+        textareaElem.value = value;
+        if (definition.max_length && definition.max_length > 0) {
+          textareaElem.maxLength = definition.max_length;
+        }
+
+        config[definition.name] = value;
+        textareaElem.addEventListener("input", (e) => {
+          config[definition.name] = e.target.value;
+          notify_config_change();
+        });
+        
+        return wrap_with_label(textareaElem, definition, prefixId);
+      }
+
+      function create_select_elem(definition, config, prefixId) {
+        const value = get_initial_value(definition, config);
+
+        const selectElem = document.createElement("select");
+        selectElem.value = value;
+        
+        const options = definition.options || [];
+        options.forEach(o => {
+          const option = document.createElement("option");
+          option.value = o;
+          option.text = o;
+          option.selected = o == value ? "selected" : "";
+          selectElem.appendChild(option);
+        })
+
+        config[definition.name] = value;
+        selectElem.addEventListener("change", (e) => {
+          e.selected = "selected";
+          config[definition.name] = e.target.value;
+          notify_config_change();
+        });
+        
+        return wrap_with_label(selectElem, definition, prefixId);
+      }
+
+      function create_not_supported_elem(definition, config, prefixId) {
+        const labelElem = document.createElement("label");
+        labelElem.innerHTML = "Not supported in browser";
+
+        config[definition.name] = definition.value;
+        return wrap_with_label(labelElem, definition, prefixId);
+      }
+
+      function notify_config_change() {
+        console.log(wallpaperConfig)
+        localStorage.setItem(wallpaperConfigKey, JSON.stringify(wallpaperConfig));
+
+        wallpaper_update_config(JSON.stringify(wallpaperConfig));
+      }
+    </script><ins class="adsbygoogle adsbygoogle-noablate" data-ad-hi="true" data-adsbygoogle-status="done" style="display: none !important;" data-ad-status="unfilled"><div id="aswift_0_host" style="border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; height: 0px; width: 0px; margin: 0px; padding: 0px; position: relative; visibility: visible; background-color: transparent; display: inline-block;"><iframe id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;border:0;width:undefinedpx;height:undefinedpx;min-height:auto;max-height:none;min-width:auto;max-width:none;" sandbox="allow-forms allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allow="attribution-reporting; run-ad-auction" src="./vivid_stasis_files/ads.html" data-google-container-id="a!1" tabindex="0" title="Advertisement" aria-label="Advertisement" data-load-complete="true"></iframe></div></ins>
+    <script>
+      (function installFullscreenExitGuard() {
+        function wrapExitMethod(methodName) {
+          var original = document[methodName];
+          if (typeof original !== "function") {
+            return;
+          }
+
+          document[methodName] = function guardedExitFullscreen() {
+            var activeElement = document.fullscreenElement
+              || document.webkitFullscreenElement
+              || document.mozFullScreenElement
+              || document.msFullscreenElement;
+
+            if (!document.isActive || !activeElement) {
+              return Promise.resolve();
+            }
+
+            try {
+              return Promise.resolve(original.apply(document, arguments)).catch(function(error) {
+                if (error && /Document not active/i.test(String(error.message || error))) {
+                  return;
+                }
+                throw error;
+              });
+            } catch (error) {
+              if (error && /Document not active/i.test(String(error.message || error))) {
+                return Promise.resolve();
+              }
+              throw error;
+            }
+          };
+        }
+
+        wrapExitMethod("exitFullscreen");
+        wrapExitMethod("webkitExitFullscreen");
+      })();
+
+      window.__runnerScriptSrc = "runner.js";
+    </script>
+    <script src="./vivid_stasis_files/loader.js.download"></script>
+  <script defer="" src="./vivid_stasis_files/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;1426f9e65a1a40d8a86108d70a688d88&quot;,&quot;r&quot;:1,&quot;server_timing&quot;:{&quot;name&quot;:{&quot;cfCacheStatus&quot;:true,&quot;cfEdge&quot;:true,&quot;cfExtPri&quot;:true,&quot;cfL4&quot;:true,&quot;cfOrigin&quot;:true,&quot;cfSpeedBrain&quot;:true},&quot;location_startswith&quot;:null}}" crossorigin="anonymous"></script>
+
+
+</body><iframe id="google_esf" name="google_esf" src="./vivid_stasis_files/zrt_lookup_fy2021.html" style="display: none;"></iframe></html>
